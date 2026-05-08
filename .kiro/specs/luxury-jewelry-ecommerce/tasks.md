@@ -101,17 +101,30 @@
   - Test add, remove, quantity update, and total calculation
   - _Requirements: 7.3, 7.4_
 
-- [ ] 5. Sanity CMS setup and schemas
-- [ ] 5.1 Configure Sanity project and client
+- [-] 5. Sanity CMS setup and schemas
+
+
+- [x] 5.1 Configure Sanity project and client
+
+
+
+
+
+
   - Create `sanity.config.ts` and `lib/sanity/client.ts` with project ID, dataset, API version
   - Set up `@sanity/image-url` builder in `lib/sanity/image.ts`
   - _Requirements: 10.1_
 
-- [ ] 5.2 Write Sanity schemas
+- [x] 5.2 Write Sanity schemas
+
+
   - Implement schemas for: `product`, `category`, `collection`, `homepageSettings`, `policy`, `editorialQuote`
   - _Requirements: 10.1, 10.2, 10.3, 10.5, 10.6_
 
 - [ ] 5.3 Write GROQ query library
+
+
+
   - Create `lib/sanity/queries.ts` with typed queries for: homepage settings, product by slug, collection by slug, all collections, policy by slug, featured products
   - _Requirements: 10.1, 10.2, 10.3_
 
