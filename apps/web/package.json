@@ -1,0 +1,45 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run generate:importmap && next dev",
+    "devsafe": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}\" && npm run dev",
+    "build": "npm run generate:importmap && next build",
+    "start": "next start",
+    "lint": "eslint",
+    "generate:importmap": "node --import tsx ./scripts/generate-importmap.mjs"
+  },
+  "dependencies": {
+    "@payloadcms/db-sqlite": "3.85.1",
+    "@payloadcms/next": "3.85.1",
+    "@payloadcms/richtext-lexical": "3.85.1",
+    "@payloadcms/ui": "3.85.1",
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-toast": "^1.2.15",
+    "clsx": "^2.1.1",
+    "graphql": "^16.8.1",
+    "lucide-react": "^1.8.0",
+    "next": "^16.2.6",
+    "payload": "3.85.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sharp": "^0.34.2",
+    "tailwind-merge": "^3.5.0",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "^16.2.6",
+    "tailwindcss": "^4",
+    "tsx": "^4.22.4",
+    "typescript": "^5"
+  }
+}

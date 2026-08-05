@@ -101,7 +101,8 @@
   - Test add, remove, quantity update, and total calculation
   - _Requirements: 7.3, 7.4_
 
-- [-] 5. Sanity CMS setup and schemas
+- [x] 5. Sanity CMS setup and schemas
+
 
 
 - [x] 5.1 Configure Sanity project and client
@@ -121,127 +122,183 @@
   - Implement schemas for: `product`, `category`, `collection`, `homepageSettings`, `policy`, `editorialQuote`
   - _Requirements: 10.1, 10.2, 10.3, 10.5, 10.6_
 
-- [ ] 5.3 Write GROQ query library
+- [x] 5.3 Write GROQ query library
+
 
 
 
   - Create `lib/sanity/queries.ts` with typed queries for: homepage settings, product by slug, collection by slug, all collections, policy by slug, featured products
   - _Requirements: 10.1, 10.2, 10.3_
 
-- [ ] 6. Homepage sections
-- [ ] 6.1 Build `HeroSection` component
+- [x] 6. Homepage sections
+
+
+- [x] 6.1 Build `HeroSection` component
+
+
   - Full-viewport editorial image, serif headline, subline, ghost CTA
   - Fade-in + translateY entry animation (400ms), respects reduced-motion
   - _Requirements: 4.2_
 
-- [ ] 6.2 Build `FeaturedCategories` section
+- [x] 6.2 Build `FeaturedCategories` section
+
+
   - 4-col desktop / 2-col mobile grid of `CategoryTile` components
   - Hover crossfade transition (300ms) on each tile
   - _Requirements: 4.3_
 
-- [ ] 6.3 Build `SignatureCollection` section
+- [x] 6.3 Build `SignatureCollection` section
+
+
   - Asymmetric 2-col: large editorial image left, 2 product feature cards right
   - _Requirements: 4.4_
 
-- [ ] 6.4 Build `CampaignBanner` component
+- [x] 6.4 Build `CampaignBanner` component
+
+
   - Full-width image, dark overlay, centered serif headline, CTA button
   - _Requirements: 4.5_
 
-- [ ] 6.5 Build `ProductHighlights` section
+- [x] 6.5 Build `ProductHighlights` section
+
+
   - 4-col desktop / 2-col mobile grid using `ProductCard` components
   - _Requirements: 4.6_
 
-- [ ] 6.6 Build `BrandStory` section
+- [x] 6.6 Build `BrandStory` section
+
+
   - 50/50 split: editorial image left, serif headline + body copy right
   - _Requirements: 4.7_
 
-- [ ] 6.7 Build `NewsletterCapture` section
+- [x] 6.7 Build `NewsletterCapture` section
+
+
   - Centered minimal layout, brand headline, email input form
   - On submit, call `POST /newsletter/subscribe`
   - _Requirements: 4.8_
 
-- [ ] 6.8 Wire homepage to Sanity data
+- [x] 6.8 Wire homepage to Sanity data
+
+
   - Fetch `homepageSettings` in `app/page.tsx` as server component, pass to all section components
   - _Requirements: 10.3_
 
-- [ ] 7. ProductCard component
+- [x] 7. ProductCard component
+
+
   - Primary image, hover swap to secondary (300ms crossfade), name, price, WishlistButton toggle
   - LoadingSkeleton shimmer variant for loading state
   - _Requirements: 5.3, 5.4_
 
-- [ ] 8. Collection page
-- [ ] 8.1 Build `CollectionHero` component
+- [x] 8. Collection page
+
+
+- [x] 8.1 Build `CollectionHero` component
+
+
   - Full-width banner with collection title overlaid on editorial image
   - _Requirements: 5.1_
 
-- [ ] 8.2 Build `FilterBar` and `FilterDrawer`
+- [x] 8.2 Build `FilterBar` and `FilterDrawer`
+
+
   - Desktop: inline filter controls (material, price range, availability) + sort select
   - Mobile: "Filter" button triggers slide-up FilterDrawer
   - _Requirements: 5.2, 5.5, 5.7_
 
-- [ ] 8.3 Build collection page with product grid and load more
+- [x] 8.3 Build collection page with product grid and load more
+
+
   - `app/collections/[slug]/page.tsx` as server component fetching from Sanity
   - ProductGrid with ProductCard, "Load More" button appending next batch
   - _Requirements: 5.2, 5.3, 5.6_
 
-- [ ] 9. Product detail page
-- [ ] 9.1 Build `ProductGallery` component
+- [x] 9. Product detail page
+
+
+- [x] 9.1 Build `ProductGallery` component
+
+
   - Desktop: main image + thumbnail strip with click-to-swap
   - Mobile: swipeable image carousel
   - _Requirements: 6.1, 6.2_
 
-- [ ] 9.2 Build `ProductOptions` selector
+- [x] 9.2 Build `ProductOptions` selector
+
+
   - Option groups (metal, size, stone) as button grids with clear selected state
   - _Requirements: 6.3_
 
-- [ ] 9.3 Build `AddToCartButton` with stock validation
+- [x] 9.3 Build `AddToCartButton` with stock validation
+
+
   - On click: call `POST /cart/validate`, add to Zustand store, open CartDrawer
   - Disabled "Sold Out" state when inStock is false
   - _Requirements: 6.4_
 
-- [ ] 9.4 Build `EditorialAccordion` for product info sections
+- [x] 9.4 Build `EditorialAccordion` for product info sections
+
+
   - Collapsible accordion for: Product Story, Materials & Craftsmanship, Shipping & Returns
   - _Requirements: 6.5, 6.6, 6.7_
 
-- [ ] 9.5 Build `RelatedProducts` horizontal scroll
+- [x] 9.5 Build `RelatedProducts` horizontal scroll
+
+
   - 4 related ProductCard components in a horizontal scroll container
   - _Requirements: 6.8_
 
-- [ ] 9.6 Build `StickyCartBar` for mobile
+- [x] 9.6 Build `StickyCartBar` for mobile
+
+
   - Fixed bottom bar, mobile only, with product name, price, and Add to Cart
   - _Requirements: 6.9_
 
-- [ ] 9.7 Wire product detail page to Sanity data
+- [x] 9.7 Wire product detail page to Sanity data
+
+
   - `app/products/[slug]/page.tsx` as server component with JSON-LD Product schema markup
   - _Requirements: 10.6, 12.1_
 
-- [ ] 10. FastAPI backend setup
-- [ ] 10.1 Initialize FastAPI app with config and database
+- [x] 10. FastAPI backend setup
+
+
+- [x] 10.1 Initialize FastAPI app with config and database
+
   - `app/main.py` with FastAPI instance, CORS config, router registration
   - `app/config.py` with Pydantic BaseSettings for all env vars
   - `app/database.py` with SQLModel engine, session factory, startup hook
   - _Requirements: 11.6, 11.7_
 
-- [ ] 10.2 Implement all SQLModel table models
+- [x] 10.2 Implement all SQLModel table models
+
+
   - Models in `app/models/` for: User, Cart, CartItem, Order, OrderItem, Payment, Coupon, NewsletterSignup, Wishlist, WishlistItem, WebhookEvent
   - _Requirements: 11.6_
 
-- [ ] 10.3 Implement health router
+- [x] 10.3 Implement health router
+
   - `app/routers/health.py` with `GET /health` returning status and version
   - _Requirements: 11.1_
 
-- [ ] 11. Cart validation and checkout
-- [ ] 11.1 Implement `cart_service` and cart router
+- [x] 11. Cart validation and checkout
+
+
+- [x] 11.1 Implement `cart_service` and cart router
+
   - `app/services/cart_service.py` with `validate_cart(items)` checking stock and price
   - `app/routers/cart.py` with `POST /cart/validate` and `POST /cart/coupon`
   - _Requirements: 11.2_
 
-- [ ] 11.2 Implement `stripe_service` and checkout router
+- [x] 11.2 Implement `stripe_service` and checkout router
+
   - `app/services/stripe_service.py` with `create_checkout_session(items, coupon, urls)`
   - `app/routers/checkout.py` with `POST /checkout/session`, attaching order metadata
   - _Requirements: 11.3, 9.1, 9.2_
 
-- [ ] 11.3 Implement `coupon_service`
+- [x] 11.3 Implement `coupon_service`
+
   - `app/services/coupon_service.py` with `validate_coupon(code, subtotal)` checking active, expiry, max uses
   - _Requirements: 9.7_
 
@@ -249,13 +306,17 @@
   - Test price validation, out-of-stock detection, coupon expiry, discount calculation
   - _Requirements: 11.2, 9.7_
 
-- [ ] 12. Stripe webhook processing
-- [ ] 12.1 Implement webhook router
+- [x] 12. Stripe webhook processing
+
+
+- [x] 12.1 Implement webhook router
+
   - `app/routers/webhooks.py` with `POST /webhooks/stripe`
   - Verify Stripe signature, check WebhookEvent table for idempotency, handle `checkout.session.completed`
   - _Requirements: 9.3, 9.6_
 
-- [ ] 12.2 Implement `order_service`
+- [x] 12.2 Implement `order_service`
+
   - `app/services/order_service.py` with `create_from_session(session)` creating Order, OrderItem, Payment records
   - _Requirements: 9.3_
 
@@ -263,52 +324,72 @@
   - Use Stripe CLI fixture payloads to test signature verification and order creation
   - _Requirements: 9.6_
 
-- [ ] 13. Orders, wishlist, and newsletter routers
-- [ ] 13.1 Implement orders router
+- [x] 13. Orders, wishlist, and newsletter routers
+
+
+- [x] 13.1 Implement orders router
+
   - `app/routers/orders.py` with `GET /orders/{order_id}`
   - _Requirements: 9.4_
 
-- [ ] 13.2 Implement wishlist router
+- [x] 13.2 Implement wishlist router
+
   - `app/routers/wishlist.py` with `POST /wishlist` add/remove for authenticated users
   - _Requirements: 11.9, 8.3_
 
-- [ ] 13.3 Implement newsletter router
+- [x] 13.3 Implement newsletter router
+
   - `app/routers/newsletter.py` with `POST /newsletter/subscribe`, handle duplicate email gracefully
   - _Requirements: 11.8_
 
-- [ ] 14. Checkout flow wiring (frontend)
-- [ ] 14.1 Wire checkout button to FastAPI session creation
+- [x] 14. Checkout flow wiring (frontend)
+
+
+- [x] 14.1 Wire checkout button to FastAPI session creation
+
   - CartDrawer checkout button calls `POST /checkout/session` with cart items
   - On success, redirect to Stripe hosted checkout URL
   - _Requirements: 9.1, 9.2_
 
-- [ ] 14.2 Build checkout success and cancel pages
+- [x] 14.2 Build checkout success and cancel pages
+
   - `app/checkout/success/page.tsx`: fetch order via `GET /orders/{id}` using session_id, display confirmation
   - `app/checkout/cancel/page.tsx`: branded cancellation page with recovery CTA back to cart
   - _Requirements: 9.4, 9.5_
 
-- [ ] 15. Wishlist page and backend sync
+- [x] 15. Wishlist page and backend sync
+
+
   - Build `app/wishlist/page.tsx` displaying all saved items with image, name, price, Add to Cart
   - When user is authenticated, sync wishlist actions to `POST /wishlist`
   - _Requirements: 8.3, 8.4, 8.5_
 
-- [ ] 16. Policy and about pages
-- [ ] 16.1 Build policy page
+- [x] 16. Policy and about pages
+
+
+- [x] 16.1 Build policy page
+
   - `app/policies/[slug]/page.tsx` fetching policy body from Sanity and rendering PortableText
   - _Requirements: 10.5_
 
-- [ ] 16.2 Build about page
+- [x] 16.2 Build about page
+
   - `app/about/page.tsx` with brand story content from Sanity
   - _Requirements: 2.1_
 
-- [ ] 17. SEO and metadata
+- [x] 17. SEO and metadata
+
+
   - Add Next.js Metadata API exports to all page routes (title, description, OG tags)
   - Add JSON-LD Product schema to product detail pages
   - Add canonical tags to collection pages
   - Ensure all Next.js Image components have descriptive alt text
   - _Requirements: 12.1, 12.2, 12.3, 12.5, 12.6_
 
-- [ ] 18. Branded 404 and error pages
+- [x] 18. Branded 404 and error pages
+
+
+
   - Create `app/not-found.tsx` with branded 404 layout and CTA to homepage
   - Create `app/error.tsx` boundary with recovery CTA
   - _Requirements: 2

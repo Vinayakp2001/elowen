@@ -5,7 +5,11 @@ engine = create_engine(settings.database_url, echo=settings.environment == "deve
 
 
 def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
+    try:
+        SQLModel.metadata.create_all(engine)
+    except Exception as e:
+        print(f"[WARNING] Could not connect to database: {e}")
+        print("[WARNING] Backend running without database — DB-dependent endpoints will fail.")
 
 
 def get_session():

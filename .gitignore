@@ -15,11 +15,26 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+apps/api/.pytest_cache/
 
 # Environment
 .env
 .env.local
 .env.*.local
+apps/api/.env
+
+# Payload CMS
+apps/web/payload.db
+apps/web/payload.db-shm
+apps/web/payload.db-wal
+apps/web/public/media/
+
+# Sanity
+apps/studio/.sanity/
+
+# IDE & Tools
+.vscode/
+.qoder/
 
 # Misc
 .DS_Store
