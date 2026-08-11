@@ -243,7 +243,7 @@ export async function getCollectionBySlug(slug: string) {
       description: doc.description as string | undefined,
       heroImage: transformImage(doc.heroImage),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      products: ((doc.products as any[]) ?? []).map(transformProductCard).filter(Boolean),
+      products: ((doc.products as any[]) ?? []).map(transformProductCard).filter((p): p is NonNullable<ReturnType<typeof transformProductCard>> => p !== null),
     }
   } catch {
     return null
