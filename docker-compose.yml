@@ -32,9 +32,6 @@ services:
     image: ghcr.io/${GHCR_OWNER}/elowen-web:latest
     restart: unless-stopped
     env_file: .env
-    volumes:
-      - sqlite_data:/app/payload.db
-      - media_data:/app/public/media
     networks:
       - elowen_net
     depends_on:
@@ -59,5 +56,4 @@ networks:
 
 volumes:
   postgres_data:
-  sqlite_data:
   media_data:

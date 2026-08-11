@@ -1,7 +1,7 @@
 import path from "path"
 import { fileURLToPath } from "url"
 import { buildConfig } from "payload"
-import { sqliteAdapter } from "@payloadcms/db-sqlite"
+import { postgresAdapter } from "@payloadcms/db-postgres"
 import { lexicalEditor } from "@payloadcms/richtext-lexical"
 import { Users } from "./collections/Users"
 import { Products } from "./collections/Products"
@@ -18,9 +18,9 @@ const dirname = path.dirname(filename)
 export default buildConfig({
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000",
   secret: process.env.PAYLOAD_SECRET ?? "",
-  db: sqliteAdapter({
-    client: {
-      url: "file:./payload.db",
+  db: postgresAdapter({
+    pool: {
+      connectionString: process.env.PAYLOAD_DATABASE_URL,
     },
   }),
   editor: lexicalEditor({}),
