@@ -10,6 +10,8 @@ import { api, ApiError } from "@/lib/api/client"
 import { useAuthStore } from "@/lib/store/auth"
 import { useWishlistStore } from "@/lib/store/wishlist"
 
+export const dynamic = "force-dynamic"
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
 
 export default function LoginPage() {

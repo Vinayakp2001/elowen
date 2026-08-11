@@ -6,6 +6,8 @@ import Link from "next/link"
 import { useAuthStore } from "@/lib/store/auth"
 import { api, ApiError } from "@/lib/api/client"
 import { Input } from "@/components/ui/input"
+
+export const dynamic = "force-dynamic"
 import { Button } from "@/components/ui/button"
 
 export default function ChangePasswordPage() {

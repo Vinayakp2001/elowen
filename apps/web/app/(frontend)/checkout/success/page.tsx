@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { api } from "@/lib/api/client"
 
+export const dynamic = "force-dynamic"
+
 interface OrderItem {
   sku: string
   product_name: string

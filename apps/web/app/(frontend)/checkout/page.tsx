@@ -9,6 +9,8 @@ import { api, ApiError } from "@/lib/api/client"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
+export const dynamic = "force-dynamic"
+
 const INDIA_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
   "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",

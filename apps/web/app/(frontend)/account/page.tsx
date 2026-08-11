@@ -6,6 +6,8 @@ import Link from "next/link"
 import { useAuthStore } from "@/lib/store/auth"
 import { api } from "@/lib/api/client"
 
+export const dynamic = "force-dynamic"
+
 interface OrderItem {
   sku: string
   product_name: string
