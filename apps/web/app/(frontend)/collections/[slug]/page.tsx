@@ -56,7 +56,7 @@ export default async function CollectionPage({ params }: Props) {
         description={collection.description}
         imageUrl={heroImageUrl}
       />
-      <CollectionGrid products={collection.products ?? []} />
+      <CollectionGrid products={(collection.products ?? []).filter(Boolean)} />
     </div>
   )
 }
