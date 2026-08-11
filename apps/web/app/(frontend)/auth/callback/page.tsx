@@ -6,6 +6,8 @@ import { useAuthStore } from "@/lib/store/auth"
 import { api } from "@/lib/api/client"
 import { useWishlistStore } from "@/lib/store/wishlist"
 
+export const dynamic = "force-dynamic"
+
 export default function AuthCallbackPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
