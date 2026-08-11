@@ -68,12 +68,10 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_TOKEN,GHCR_ACTOR,GHCR_OWNER
+          envs: GHCR_TOKEN,GHCR_ACTOR,GHCR_OWNER,APP_ENV
           script: |
             mkdir -p /opt/elowen/nginx
-            cat > /opt/elowen/.env << 'ENVEOF'
-${{ secrets.ENV_FILE }}
-ENVEOF
+            printf '%s\n' "${APP_ENV}" > /opt/elowen/.env
             echo "GHCR_OWNER=${GHCR_OWNER}" >> /opt/elowen/.env
             cd /opt/elowen
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_ACTOR}" --password-stdin
@@ -83,3 +81,4 @@ ENVEOF
           GHCR_TOKEN: ${{ secrets.GHCR_PAT }}
           GHCR_ACTOR: ${{ github.actor }}
           GHCR_OWNER: ${{ github.repository_owner }}
+          APP_ENV: ${{ secrets.ENV_FILE }}
