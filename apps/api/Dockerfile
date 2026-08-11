@@ -9,8 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Make entrypoint executable
-RUN chmod +x entrypoint.sh
+# Ensure Unix line endings and make executable
+RUN sed -i 's/\r//' entrypoint.sh && chmod +x entrypoint.sh
 
 EXPOSE 8000
 
