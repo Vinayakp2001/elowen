@@ -22,6 +22,7 @@ export default buildConfig({
     pool: {
       connectionString: process.env.PAYLOAD_DATABASE_URL,
     },
+    push: process.env.PAYLOAD_DB_PUSH === "true",
   }),
   editor: lexicalEditor({}),
   collections: [Users, NavItems, Products, Categories, Collections, Policies, Media],
