@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { api } from "@/lib/api/client"
@@ -33,7 +33,7 @@ function formatPrice(amount: number, currency: string) {
   }).format(amount)
 }
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessInner() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
   const [order, setOrder] = useState<Order | null>(null)
@@ -159,5 +159,21 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="pt-16 min-h-screen bg-[#FDFAF5] flex items-center justify-center">
+          <p className="font-sans text-[0.75rem] tracking-[0.08em] uppercase text-[#8C7B6B]">
+            Loading...
+          </p>
+        </div>
+      }
+    >
+      <CheckoutSuccessInner />
+    </Suspense>
   )
 }
