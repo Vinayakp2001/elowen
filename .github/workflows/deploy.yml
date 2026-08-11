@@ -37,6 +37,9 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/elowen-web:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/elowen-web:latest
+          build-args: |
+            NEXT_PUBLIC_SERVER_URL=${{ secrets.NEXT_PUBLIC_SERVER_URL }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
 
       - name: Build and push api image
         uses: docker/build-push-action@v5
