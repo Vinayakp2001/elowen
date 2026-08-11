@@ -23,7 +23,7 @@ interface Product {
   sku: string
   price: number
   compareAtPrice?: number
-  images: Array<{ asset: { url: string }; alt?: string }>
+  images: Array<{ url: string; alt?: string }>
   isNew?: boolean
   inStock?: boolean
   materials?: string[]
