@@ -35,6 +35,7 @@ apps/studio/.sanity/
 # IDE & Tools
 .vscode/
 .qoder/
+.kiro/
 
 # Misc
 .DS_Store
