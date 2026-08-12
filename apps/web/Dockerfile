@@ -26,7 +26,22 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
-# ── Stage 3: runner ───────────────────────────────────────────────────────────
+# ── Stage 3: migrator ────────────────────────────────────────────────────────
+FROM node:20-alpine AS migrator
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/payload.config.ts ./payload.config.ts
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/collections ./collections
+COPY --from=builder /app/globals ./globals
+
+CMD ["node_modules/.bin/payload", "migrate"]
+
+# ── Stage 4: runner ───────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
@@ -40,9 +55,6 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 RUN rm -f ./payload.db && rm -rf ./public/media
 
