@@ -32,10 +32,14 @@ services:
     image: ghcr.io/${GHCR_OWNER}/elowen-web:latest
     restart: unless-stopped
     env_file: .env
+    command: sh -c "node_modules/.bin/payload migrate && node server.js"
     networks:
       - elowen_net
     depends_on:
-      - api
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
 
   nginx:
     image: nginx:alpine
