@@ -41,6 +41,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# Create empty migrations dir so Payload doesn't error (push:true handles schema)
+RUN mkdir -p /app/migrations
+
 RUN rm -f ./payload.db && rm -rf ./public/media
 
 USER nextjs
