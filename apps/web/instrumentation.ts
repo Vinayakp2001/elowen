@@ -1,8 +1,4 @@
 export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const { getPayload } = await import('payload')
-    const config = await import('./payload.config')
-    const payload = await getPayload({ config: config.default })
-    await payload.db.migrate?.()
-  }
+  // Migrations are handled by the elowen-web-migrator container in CI/CD.
+  // Nothing to do here at runtime.
 }

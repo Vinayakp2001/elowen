@@ -24,7 +24,7 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000"),
   title: {
     default: "Elowen — Fine Jewelry",
     template: "%s | Elowen",
