@@ -4,7 +4,6 @@ import "./globals.css"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { CartDrawer } from "@/components/navigation/cart-drawer"
-import { getAllCollections, getNavItems } from "@/lib/payload/queries"
 
 export const revalidate = 60
 
@@ -43,34 +42,20 @@ export default async function FrontendLayout({
 }: {
   children: React.ReactNode
 }) {
-  const collections = (await getAllCollections().catch(() => [])) ?? []
-  const navItems = (await getNavItems().catch(() => [])) ?? []
 
-  // Static fallback links always shown — these are the core jewelry categories.
-  // CMS collections with matching slugs will override/replace them naturally
-  // since the /collections/[slug] page handles both real and "coming soon" states.
-  const staticCategoryLinks = [
-    { label: "New Arrivals", href: "/collections/new-arrivals" },
-    { label: "Rings", href: "/collections/rings" },
-    { label: "Necklaces", href: "/collections/necklaces" },
-    { label: "Earrings", href: "/collections/earrings" },
+  // Fixed nav links — these never change regardless of what's in the CMS.
+  // New collections created in CMS are browsable via /collections, not added here.
+  const fixedNavLinks = [
+    { label: "Shop All", href: "/products" },
+    { label: "New Arrivals", href: "/nav/new-arrivals" },
+    { label: "Rings", href: "/nav/rings" },
+    { label: "Necklaces", href: "/nav/necklaces" },
+    { label: "Earrings", href: "/nav/earrings" },
+    { label: "Collections", href: "/collections" },
   ]
 
-  // If CMS has nav items defined, use those — otherwise fall back to collection-based links
-  const cmsSlugSet = new Set(collections.map((c) => c.slug.current))
-  const mergedCategoryLinks = navItems.length > 0
-    ? [
-        { label: "Shop All", href: "/products" },
-        ...navItems.map((n) => ({ label: n.label, href: `/nav/${n.slug}` })),
-      ]
-    : [
-        { label: "Shop All", href: "/products" },
-        ...collections.map((c) => ({ label: c.title, href: `/collections/${c.slug.current}` })),
-        ...staticCategoryLinks.filter((l) => !cmsSlugSet.has(l.href.replace("/collections/", ""))),
-      ]
-
   const shopFooterLinks = [
-    ...mergedCategoryLinks,
+    ...fixedNavLinks,
     { label: "About Us", href: "/about" },
   ]
 
@@ -80,7 +65,7 @@ export default async function FrontendLayout({
       className={`${cormorant.variable} ${dmSans.variable}`}
     >
       <body className="min-h-screen flex flex-col bg-[#FDFAF5] text-[#2C2C2C] antialiased">
-        <SiteHeader collectionLinks={mergedCategoryLinks} />
+        <SiteHeader collectionLinks={fixedNavLinks} />
         <CartDrawer />
         <main className="flex-1">{children}</main>
         <SiteFooter shopLinks={shopFooterLinks} />

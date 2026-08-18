@@ -18,10 +18,25 @@ export function AssignNavItemAction() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    const defaults: NavItem[] = [
+      { id: "default-new-arrivals", label: "New Arrivals", slug: "new-arrivals" },
+      { id: "default-rings", label: "Rings", slug: "rings" },
+      { id: "default-necklaces", label: "Necklaces", slug: "necklaces" },
+      { id: "default-earrings", label: "Earrings", slug: "earrings" },
+    ]
     fetch("/api/nav-items?limit=100&depth=0")
       .then((r) => r.json())
-      .then((data) => setNavItems(data?.docs ?? []))
-      .catch(() => {})
+      .then((data) => {
+        const cmsItems: NavItem[] = data?.docs ?? []
+        const cmsslugs = new Set(cmsItems.map((i) => i.slug))
+        // Show CMS items first, then any defaults not already covered
+        const merged = [
+          ...cmsItems,
+          ...defaults.filter((d) => !cmsslugs.has(d.slug)),
+        ]
+        setNavItems(merged)
+      })
+      .catch(() => setNavItems(defaults))
   }, [])
 
   const hasSelection = selectedIDs.length > 0
@@ -33,8 +48,28 @@ export function AssignNavItemAction() {
     }
     setLoading(true)
     try {
+      let navId = selectedNavId
+
+      // If this is a default (not yet in CMS), create it first
+      if (selectedNavId.startsWith("default-")) {
+        const defaultItem = navItems.find((n) => n.id === selectedNavId)
+        if (!defaultItem) throw new Error("Nav item not found")
+        const createRes = await fetch("/api/nav-items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label: defaultItem.label, slug: defaultItem.slug, order: 0 }),
+        })
+        const created = await createRes.json()
+        navId = created.doc?.id ?? created.id
+        // Update local state so label lookup works
+        setNavItems((prev) =>
+          prev.map((n) => (n.id === selectedNavId ? { ...n, id: String(navId) } : n))
+        )
+        setSelectedNavId(String(navId))
+      }
+
       // Fetch the nav item's current products list
-      const res = await fetch(`/api/nav-items/${selectedNavId}?depth=0`)
+      const res = await fetch(`/api/nav-items/${navId}?depth=0`)
       const navItem: NavItem = await res.json()
       const existing = (navItem.products ?? []).map((p) =>
         typeof p === "string" ? p : p.id
@@ -42,7 +77,7 @@ export function AssignNavItemAction() {
       // Merge existing + newly selected, deduplicated
       const merged = Array.from(new Set([...existing, ...selectedIDs.map(String)]))
       // PATCH the nav item with the merged products list
-      await fetch(`/api/nav-items/${selectedNavId}`, {
+      await fetch(`/api/nav-items/${navId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ products: merged }),

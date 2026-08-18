@@ -1,7 +1,26 @@
 import type { CollectionConfig } from "payload"
 
+function toSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+}
+
 export const Products: CollectionConfig = {
   slug: "products",
+  hooks: {
+    beforeValidate: [
+      ({ data }) => {
+        if (data?.title && !data?.slug) {
+          data.slug = toSlug(data.title)
+        }
+        return data
+      },
+    ],
+  },
   access: {
     read: () => true,
   },
@@ -25,6 +44,9 @@ export const Products: CollectionConfig = {
       type: "text",
       required: true,
       unique: true,
+      admin: {
+        hidden: true,
+      },
     },
     {
       name: "sku",
