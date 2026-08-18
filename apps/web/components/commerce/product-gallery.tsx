@@ -35,7 +35,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
       <div className="hidden md:flex gap-4 items-start">
         {/* Thumbnails */}
         {validImages.length > 1 && (
-          <div className="flex flex-col gap-2 w-16 shrink-0 max-h-[500px] overflow-y-auto">
+          <div className="flex flex-col gap-2 w-16 shrink-0 max-h-[600px] overflow-y-auto">
             {validImages.map((img, i) => (
               <button
                 key={i}
@@ -60,29 +60,29 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
           </div>
         )}
 
-        {/* Main image — naturally sized, no fixed box */}
-        <div className="flex-1 bg-[#F5F0E8] flex items-center justify-center overflow-hidden">
+        {/* Main image — square aspect ratio so it always fills the column */}
+        <div className="flex-1 aspect-square bg-[#F5F0E8] flex items-center justify-center overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             key={active.url}
             src={active.url}
             alt={active.alt ?? title}
-            className="w-full max-h-[500px] object-contain transition-opacity duration-200"
+            className="w-full h-full object-contain transition-opacity duration-200"
           />
         </div>
       </div>
 
       {/* Mobile */}
-      <div className="md:hidden bg-[#F5F0E8] flex items-center justify-center">
+      <div className="md:hidden relative bg-[#F5F0E8] aspect-square flex items-center justify-center overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           key={active.url}
           src={active.url}
           alt={active.alt ?? title}
-          className="w-full max-h-[420px] object-contain"
+          className="w-full h-full object-contain"
         />
         {validImages.length > 1 && (
-          <div className="flex justify-center gap-1.5 mt-3 absolute bottom-3 left-0 right-0">
+          <div className="flex justify-center gap-1.5 absolute bottom-3 left-0 right-0">
             {validImages.map((_, i) => (
               <button
                 key={i}

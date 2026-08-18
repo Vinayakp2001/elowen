@@ -65,11 +65,13 @@ export default async function ProductPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="pt-16 pb-24 md:pb-0">
+      <div className="pt-16 pb-24 md:pb-20">
         <div className="max-w-[1440px] mx-auto px-6 md:px-12 py-6 md:py-10">
-          <div className="grid grid-cols-1 md:grid-cols-[55%_45%] gap-8 md:gap-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 md:items-start">
             <ProductGallery images={images} title={title} />
-            <ProductInfoPanel product={{ ...product, _id: product._id ?? "", title, sku, price, inStock, images }} />
+            <div className="md:sticky md:top-24 md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-2">
+              <ProductInfoPanel product={{ ...product, _id: product._id ?? "", title, sku, price, inStock, images }} />
+            </div>
           </div>
         </div>
 
