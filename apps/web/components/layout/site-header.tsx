@@ -19,13 +19,7 @@ interface SiteHeaderProps {
 }
 
 export function SiteHeader({ collectionLinks }: SiteHeaderProps) {
-  // Always-present static links appended after collection links
-  const staticLinks: NavLink[] = [
-    { label: "Collections", href: "/collections" },
-    { label: "About", href: "/about" },
-  ]
-
-  const navLinks = [...collectionLinks, ...staticLinks]
+  const navLinks = collectionLinks
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
