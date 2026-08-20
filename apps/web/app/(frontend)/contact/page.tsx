@@ -13,12 +13,19 @@ export default function ContactPage() {
         <p className="font-sans text-[0.875rem] text-[#8C7B6B] mb-12 leading-relaxed">
           We would love to hear from you. Reach us at{" "}
           <a
-            href="mailto:hello@elowen.com"
+            href="mailto:Khandalent259@gmail.com"
             className="text-[#2C2C2C] border-b border-[#C9B99A] hover:border-[#B8975A] transition-colors duration-200"
           >
-            hello@elowen.com
+            Khandalent259@gmail.com
           </a>{" "}
-          or use the form below.
+          or call us at{" "}
+          <a
+            href="tel:+919509912259"
+            className="text-[#2C2C2C] border-b border-[#C9B99A] hover:border-[#B8975A] transition-colors duration-200"
+          >
+            +91 95099 12259
+          </a>
+          . You can also use the form below.
         </p>
 
         <form className="flex flex-col gap-8" aria-label="Contact form">

@@ -57,6 +57,7 @@ export default async function FrontendLayout({
   const shopFooterLinks = [
     ...fixedNavLinks,
     { label: "About Us", href: "/about" },
+    { label: "Contact", href: "/contact" },
   ]
 
   return (

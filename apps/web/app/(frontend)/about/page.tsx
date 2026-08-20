@@ -55,6 +55,48 @@ export default function AboutPage() {
             />
           </div>
         </div>
+
+        {/* Contact section */}
+        <div className="mt-20 pt-16 border-t border-[#E8D9C0]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div>
+              <p className="font-sans text-[0.65rem] tracking-[0.15em] uppercase text-[#8C7B6B] mb-4">
+                Contact Us
+              </p>
+              <div className="flex flex-col gap-2">
+                <a
+                  href="mailto:Khandalent259@gmail.com"
+                  className="font-sans text-[0.875rem] text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
+                >
+                  Khandalent259@gmail.com
+                </a>
+                <a
+                  href="tel:+919509912259"
+                  className="font-sans text-[0.875rem] text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
+                >
+                  +91 95099 12259
+                </a>
+              </div>
+            </div>
+            <div>
+              <p className="font-sans text-[0.65rem] tracking-[0.15em] uppercase text-[#8C7B6B] mb-4">
+                Business Hours
+              </p>
+              <p className="font-sans text-[0.875rem] text-[#8C7B6B] leading-relaxed">
+                Monday – Saturday<br />
+                10:00 AM – 6:00 PM IST
+              </p>
+            </div>
+            <div>
+              <p className="font-sans text-[0.65rem] tracking-[0.15em] uppercase text-[#8C7B6B] mb-4">
+                Customer Care
+              </p>
+              <p className="font-sans text-[0.875rem] text-[#8C7B6B] leading-relaxed">
+                We typically respond within 24 hours. For order-related queries, please have your order number ready.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
