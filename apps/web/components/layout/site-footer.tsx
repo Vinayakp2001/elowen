@@ -46,17 +46,44 @@ export function SiteFooter({ shopLinks }: SiteFooterProps) {
             </nav>
           </div>
 
-          {/* Col 2 — Policy links */}
-          <div className="flex flex-col gap-3 md:pt-[3.75rem]">
-            {policyLinks.map((link) => (
+          {/* Col 2 — Policy links + Contact */}
+          <div className="flex flex-col gap-6 md:pt-[3.75rem]">
+            <div className="flex flex-col gap-3">
+              {policyLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="font-sans text-[0.7rem] tracking-[0.1em] uppercase text-[#8C7B6B] hover:text-[#C9B99A] transition-colors duration-200"
+                >
+                  {link.label}
+                </Link>
+              ))}
               <Link
-                key={link.href}
-                href={link.href}
+                href="/contact"
                 className="font-sans text-[0.7rem] tracking-[0.1em] uppercase text-[#8C7B6B] hover:text-[#C9B99A] transition-colors duration-200"
               >
-                {link.label}
+                Contact Us
               </Link>
-            ))}
+            </div>
+
+            {/* Contact info */}
+            <div className="flex flex-col gap-2 pt-2 border-t border-[#2C2C2C]">
+              <p className="font-sans text-[0.65rem] tracking-[0.1em] uppercase text-[#8C7B6B] mb-1">
+                Get in Touch
+              </p>
+              <a
+                href="mailto:Khandalent259@gmail.com"
+                className="font-sans text-[0.7rem] text-[#8C7B6B] hover:text-[#C9B99A] transition-colors duration-200"
+              >
+                Khandalent259@gmail.com
+              </a>
+              <a
+                href="tel:+919509912259"
+                className="font-sans text-[0.7rem] text-[#8C7B6B] hover:text-[#C9B99A] transition-colors duration-200"
+              >
+                +91 95099 12259
+              </a>
+            </div>
           </div>
 
           {/* Col 3 — Newsletter */}
