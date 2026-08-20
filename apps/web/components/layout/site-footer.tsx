@@ -121,7 +121,7 @@ export function SiteFooter({ shopLinks }: SiteFooterProps) {
             </a>
           </div>
           <p className="font-sans text-[0.65rem] text-[#8C7B6B] tracking-wide">
-            © {new Date().getFullYear()} Elowen. All rights reserved.
+            © {new Date().getFullYear()} Elowen by Khandal Enterprises. All rights reserved.
           </p>
         </div>
       </div>
