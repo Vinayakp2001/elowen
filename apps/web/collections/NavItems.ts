@@ -37,8 +37,7 @@ export const NavItems: CollectionConfig = {
     },
     {
       name: "products",
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type: "relationship" as any,
+      type: "relationship",
       relationTo: "products",
       hasMany: true,
       admin: {

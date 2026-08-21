@@ -72,15 +72,17 @@ export function AssignNavItemAction() {
       const res = await fetch(`/api/nav-items/${navId}?depth=0`)
       const navItem: NavItem = await res.json()
       const existing = (navItem.products ?? []).map((p) =>
-        typeof p === "string" ? p : p.id
+        typeof p === "object" && p !== null ? String(p.id) : String(p)
       )
       // Merge existing + newly selected, deduplicated
-      const merged = Array.from(new Set([...existing, ...selectedIDs.map(String)]))
+      // Payload v3 + postgres: IDs are numbers, relationship hasMany expects array of numbers
+      const mergedIds = Array.from(new Set([...existing, ...selectedIDs.map(String)]))
+      const mergedNums = mergedIds.map((id) => Number(id))
       // PATCH the nav item with the merged products list
       await fetch(`/api/nav-items/${navId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ products: merged }),
+        body: JSON.stringify({ products: mergedNums }),
       })
       toast.success(`Added ${selectedIDs.length} product(s) to "${navItems.find((n) => n.id === selectedNavId)?.label}".`)
     } catch {
