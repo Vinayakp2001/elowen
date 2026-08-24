@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useEffect, useState } from "react"
 import { Search, User, Heart, ShoppingBag, Menu } from "lucide-react"
 import { useCartStore } from "@/lib/store/cart"
@@ -45,11 +46,15 @@ export function SiteHeader({ collectionLinks }: SiteHeaderProps) {
       >
         <div className="max-w-[1440px] mx-auto px-6 md:px-12 h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link
-            href="/"
-            className="font-serif text-xl tracking-[0.15em] uppercase text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
-          >
-            Elowen
+          <Link href="/" aria-label="Elowen - Home">
+            <Image
+              src="/logo.png"
+              alt="Elowen"
+              width={160}
+              height={56}
+              className="h-10 w-auto object-contain"
+              priority
+            />
           </Link>
 
           {/* Desktop Nav */}
