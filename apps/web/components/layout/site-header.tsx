@@ -50,9 +50,9 @@ export function SiteHeader({ collectionLinks }: SiteHeaderProps) {
             <Image
               src="/logo.png"
               alt="Elowen"
-              width={220}
-              height={80}
-              className="h-14 w-auto object-contain"
+              width={2000}
+              height={715}
+              className="h-12 w-auto object-contain"
               priority
             />
           </Link>
