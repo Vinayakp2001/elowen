@@ -3,7 +3,8 @@ import Image from "next/image"
 
 export const metadata: Metadata = {
   title: "About",
-  description: "The story behind Elowen — fine jewelry crafted with intention.",
+  description: "The story behind Elowen — fine jewelry crafted with intention, made by master craftspeople using responsibly sourced materials.",
+  alternates: { canonical: "/about" },
 }
 
 export default function AboutPage() {

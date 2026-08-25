@@ -6,7 +6,7 @@ export const revalidate = 60
 
 export const metadata: Metadata = {
   title: "Shop All",
-  description: "Browse all Elowen fine jewelry.",
+  description: "Shop all Elowen fine jewelry — handcrafted luxury rings, necklaces, earrings and bracelets in gold and gemstones, made with intention.",
   alternates: { canonical: "/products" },
 }
 

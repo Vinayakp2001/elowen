@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getProductBySlug } from "@/lib/payload/queries"
+import { absoluteUrl, defaultOgImage, productDescription } from "@/lib/seo"
 import { ProductGallery } from "@/components/commerce/product-gallery"
 import { RelatedProducts } from "@/components/commerce/related-products"
 import { StickyCartBar } from "@/components/commerce/sticky-cart-bar"
@@ -16,13 +17,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const product = await getProductBySlug(slug).catch(() => null)
   if (!product) return {}
-  const imageUrl = product.images?.[0]?.url ?? undefined
+
+  const title = product.title ?? ""
+  const materials: string[] = product.materials ?? []
+  const description = productDescription(title, materials)
+
+  const firstImage = product.images?.[0]?.url
+  const ogImage = firstImage
+    ? { url: absoluteUrl(firstImage), width: 1200, height: 900, alt: `${title} — Elowen Fine Jewelry` }
+    : defaultOgImage()
+
   return {
-    title: product.title,
-    description: `${product.title} — Fine jewelry by Elowen.`,
+    title: `${title} — Elowen Fine Jewelry`,
+    description,
+    alternates: {
+      canonical: `/products/${slug}`,
+    },
     openGraph: {
-      title: product.title,
-      images: imageUrl ? [{ url: imageUrl }] : [],
+      title: `${title} — Elowen Fine Jewelry`,
+      description,
+      images: [ogImage],
     },
   }
 }
@@ -47,15 +61,54 @@ export default async function ProductPage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "Product",
     name: title,
-    image: images.map((i) => i.url),
+    image: images.map((i) => absoluteUrl(i.url)),
+    description: productDescription(title, product.materials ?? []),
+    sku,
+    brand: { "@type": "Brand", name: "Elowen" },
     offers: {
       "@type": "Offer",
       price,
-      priceCurrency: "USD",
+      priceCurrency: "INR",
       availability: inStock
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
+      url: absoluteUrl(`/products/${slug}`),
+      seller: { "@type": "Organization", name: "Elowen" },
     },
+  }
+
+  // BreadcrumbList: Home → {Category or Shop All} → {Product}
+  const category = product.category
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: absoluteUrl("/"),
+      },
+      category
+        ? {
+            "@type": "ListItem",
+            position: 2,
+            name: category.title,
+            item: absoluteUrl(`/nav/${category.slug.current}`),
+          }
+        : {
+            "@type": "ListItem",
+            position: 2,
+            name: "Shop All",
+            item: absoluteUrl("/products"),
+          },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: title,
+        item: absoluteUrl(`/products/${slug}`),
+      },
+    ],
   }
 
   return (
@@ -63,6 +116,10 @@ export default async function ProductPage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       <div className="pt-16 pb-24 md:pb-20">

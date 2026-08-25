@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = result?.navItem.label ?? slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
   return {
     title,
-    description: `Browse ${title} — Elowen fine jewelry.`,
+    description: `Shop ${title} jewelry — handcrafted fine pieces by Elowen.`,
     alternates: { canonical: `/nav/${slug}` },
   }
 }

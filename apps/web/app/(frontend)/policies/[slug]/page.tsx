@@ -208,7 +208,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const policy = policies[slug]
   if (!policy) return {}
-  return { title: policy.title }
+  return {
+    title: policy.title,
+    description: `Read Elowen's ${policy.title} — fine jewelry store policies covering your rights and our commitments.`,
+    alternates: { canonical: `/policies/${slug}` },
+    robots: { index: false, follow: false },
+  }
 }
 
 export default async function PolicyPage({ params }: Props) {

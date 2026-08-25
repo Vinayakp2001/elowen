@@ -5,7 +5,7 @@ import uuid
 
 
 class User(SQLModel, table=True):
-    __tablename__: str = "users"
+    __tablename__: str = "api_users"
 
     id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
     email: str = Field(unique=True, index=True)

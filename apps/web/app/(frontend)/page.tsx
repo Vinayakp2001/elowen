@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { getHomepageSettings } from "@/lib/payload/queries"
 import { HeroSection } from "@/components/content/hero-section"
 import { FeaturedCategories } from "@/components/content/featured-categories"
@@ -8,6 +9,41 @@ import { BrandStory } from "@/components/content/brand-story"
 import { NewsletterCapture } from "@/components/content/newsletter-capture"
 
 export const revalidate = 60
+
+export const metadata: Metadata = {
+  title: "Elowen — Fine Jewelry | Handcrafted Luxury Pieces",
+  description:
+    "Discover Elowen's handcrafted fine jewelry — luxury rings, necklaces, and earrings made for the discerning few. Shop our collections at elowen.co.in.",
+  alternates: {
+    canonical: "/",
+  },
+}
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Elowen",
+  url: "https://elowen.co.in",
+  logo: "https://elowen.co.in/logo.png",
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: "+91-95099-12259",
+    email: "hello@elowen.co.in",
+    contactType: "customer service",
+  },
+}
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Elowen",
+  url: "https://elowen.co.in",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://elowen.co.in/products?q={search_term_string}",
+    "query-input": "required name=search_term_string",
+  },
+}
 
 export default async function HomePage() {
   const settings = await getHomepageSettings().catch(() => null)
@@ -26,6 +62,14 @@ export default async function HomePage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
       {/* Hero */}
       <HeroSection
         headline={hero?.headline ?? "Quietly Extraordinary"}

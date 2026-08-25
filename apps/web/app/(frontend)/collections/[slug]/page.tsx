@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { getCollectionBySlug } from "@/lib/payload/queries"
 import { getImageUrl } from "@/lib/payload/image"
+import { absoluteUrl, defaultOgImage } from "@/lib/seo"
 import { CollectionHero } from "@/components/content/collection-hero"
 import { CollectionGrid } from "@/components/commerce/collection-grid"
 
@@ -13,11 +14,22 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const collection = await getCollectionBySlug(slug).catch(() => null)
-  const title = collection?.title ?? slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  const label = collection?.title ?? slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  const title = `${label} Collection — Elowen`
+  const description =
+    collection?.description?.trim() ||
+    `Discover the ${label} collection — handcrafted fine jewelry by Elowen.`
+
+  const heroImage = collection?.heroImage ? getImageUrl(collection.heroImage) : null
+  const ogImages = heroImage
+    ? [{ url: absoluteUrl(heroImage), width: 1200, height: 630, alt: label }]
+    : [defaultOgImage()]
+
   return {
     title,
-    description: collection?.description,
-    openGraph: { title, description: collection?.description },
+    description,
+    alternates: { canonical: `/collections/${slug}` },
+    openGraph: { title, description, images: ogImages },
   }
 }
 
@@ -49,8 +61,22 @@ export default async function CollectionPage({ params }: Props) {
     ? getImageUrl(collection.heroImage)
     : undefined
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Collections", item: absoluteUrl("/collections") },
+      { "@type": "ListItem", position: 3, name: collection.title, item: absoluteUrl(`/collections/${slug}`) },
+    ],
+  }
+
   return (
     <div className="pt-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <CollectionHero
         title={collection.title}
         description={collection.description}
