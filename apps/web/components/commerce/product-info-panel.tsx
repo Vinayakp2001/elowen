@@ -6,6 +6,7 @@ import { AddToCartButton } from "@/components/commerce/add-to-cart-button"
 import { WishlistToggle } from "@/components/commerce/wishlist-toggle"
 import { EditorialAccordion } from "@/components/commerce/editorial-accordion"
 import { RichText } from "@/components/ui/rich-text"
+import { formatPrice } from "@/lib/utils"
 
 interface Product {
   _id: string
@@ -30,9 +31,6 @@ export function ProductInfoPanel({ product }: { product: Product }) {
   const variantKey = Object.entries(selectedOptions)
     .map(([, v]) => v.toLowerCase().replace(/\s+/g, "-"))
     .join("-")
-
-  const formatPrice = (p: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(p)
 
   const accordionItems = [
     ...(product.description

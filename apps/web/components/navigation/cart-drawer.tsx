@@ -4,14 +4,11 @@ import Image from "next/image"
 import Link from "next/link"
 import { X, Minus, Plus, ShoppingBag } from "lucide-react"
 import { useCartStore } from "@/lib/store/cart"
-import { cn } from "@/lib/utils"
+import { cn, formatPrice } from "@/lib/utils"
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, subtotal } =
     useCartStore()
-
-  const formatPrice = (p: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(p)
 
   return (
     <>

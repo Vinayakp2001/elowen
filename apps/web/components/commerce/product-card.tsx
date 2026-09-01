@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { Heart } from "lucide-react"
 import { useWishlistStore } from "@/lib/store/wishlist"
-import { cn } from "@/lib/utils"
+import { cn, formatPrice } from "@/lib/utils"
 
 interface ProductCardProps {
   _id: string
@@ -38,9 +38,6 @@ export function ProductCard({
 
   const primaryImage = images?.[0]?.url
   const secondaryImage = images?.[1]?.url
-
-  const formatPrice = (p: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(p)
 
   return (
     <div className="group relative flex flex-col">

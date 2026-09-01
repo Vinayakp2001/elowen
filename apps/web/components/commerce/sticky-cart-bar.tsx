@@ -2,6 +2,7 @@
 
 import { useCartStore, type CartItem } from "@/lib/store/cart"
 import { useState } from "react"
+import { formatPrice } from "@/lib/utils"
 
 interface StickyCartBarProps {
   item: CartItem
@@ -13,9 +14,6 @@ interface StickyCartBarProps {
 export function StickyCartBar({ item, inStock, productTitle, price }: StickyCartBarProps) {
   const [loading, setLoading] = useState(false)
   const { addItem, openCart } = useCartStore()
-
-  const formatPrice = (p: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(p)
 
   async function handleAdd() {
     if (!inStock || loading) return
