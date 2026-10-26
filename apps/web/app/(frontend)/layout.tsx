@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     siteName: "Elowen",
     images: [
       {
-        url: "/og-default.jpg",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Elowen Fine Jewelry",
@@ -59,7 +59,6 @@ export default async function FrontendLayout({
   const fixedNavLinks = [
     { label: "Shop All", href: "/products" },
     { label: "New Arrivals", href: "/nav/new-arrivals" },
-    { label: "Rings", href: "/nav/rings" },
     { label: "Necklaces", href: "/nav/necklaces" },
     { label: "Earrings", href: "/nav/earrings" },
     { label: "Collections", href: "/collections" },
