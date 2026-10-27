@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { getCollectionBySlug } from "@/lib/payload/queries"
+import { getCollectionBySlug, getAllCategories } from "@/lib/payload/queries"
 import { getImageUrl } from "@/lib/payload/image"
 import { absoluteUrl, defaultOgImage } from "@/lib/seo"
 import { CollectionHero } from "@/components/content/collection-hero"
@@ -35,7 +35,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CollectionPage({ params }: Props) {
   const { slug } = await params
-  const collection = await getCollectionBySlug(slug).catch(() => null)
+  const [collection, allCategories] = await Promise.all([
+    getCollectionBySlug(slug).catch(() => null),
+    getAllCategories().catch(() => []),
+  ])
+  const categoryTitles = allCategories.map((c) => c.title)
 
   // No CMS collection for this slug — show a graceful "coming soon" state
   if (!collection) {
@@ -82,7 +86,7 @@ export default async function CollectionPage({ params }: Props) {
         description={collection.description}
         imageUrl={heroImageUrl}
       />
-      <CollectionGrid products={collection.products ?? []} />
+      <CollectionGrid products={collection.products ?? []} categories={categoryTitles} />
     </div>
   )
 }

@@ -104,14 +104,6 @@ export function SiteFooter({ shopLinks }: SiteFooterProps) {
         <div className="mt-16 pt-6 border-t border-[#2C2C2C] flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <a
-              href="https://pinterest.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-sans text-[0.65rem] tracking-[0.1em] uppercase text-[#8C7B6B] hover:text-[#C9B99A] transition-colors duration-200"
-            >
-              Pinterest
-            </a>
-            <a
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"

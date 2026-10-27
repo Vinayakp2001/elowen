@@ -7,14 +7,8 @@ import { FilterDrawer } from "@/components/commerce/filter-drawer"
 
 const PAGE_SIZE = 10
 
-const CATEGORY_TABS = [
-  "All Products",
-  "New Arrivals",
-  "Best Sellers",
-  "Rings",
-  "Necklaces",
-  "Earrings",
-]
+// Only "All Products" is static — all other tabs come from CMS categories
+const STATIC_TABS = ["All Products"]
 
 interface Product {
   _id: string
@@ -32,9 +26,12 @@ interface Product {
 
 interface CollectionGridProps {
   products: Product[]
+  // Dynamic category titles from CMS — admin controls these
+  categories?: string[]
 }
 
-export function CollectionGrid({ products }: CollectionGridProps) {
+export function CollectionGrid({ products, categories = [] }: CollectionGridProps) {
+  const categoryTabs = [...STATIC_TABS, ...categories]
   const [sort, setSort] = useState<SortOption>("featured")
   const [filterOpen, setFilterOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("All Products")
@@ -52,10 +49,9 @@ export function CollectionGrid({ products }: CollectionGridProps) {
   const filtered = useMemo(() => {
     let result = [...products]
 
-    // Tab filter
+    // Tab filter — "All Products" shows everything, others filter by category title
     if (activeTab !== "All Products") {
-      if (activeTab === "New Arrivals") result = result.filter((p) => p.isNew)
-      else result = result.filter((p) => p.category?.title === activeTab)
+      result = result.filter((p) => p.category?.title === activeTab)
     }
 
     // Material filter
@@ -97,7 +93,7 @@ export function CollectionGrid({ products }: CollectionGridProps) {
         sort={sort}
         onSortChange={setSort}
         onFilterOpen={() => setFilterOpen(true)}
-        categoryTabs={CATEGORY_TABS}
+        categoryTabs={categoryTabs}
         activeTab={activeTab}
         onTabChange={(tab) => { setActiveTab(tab); setVisibleCount(PAGE_SIZE) }}
       />
