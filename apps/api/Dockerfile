@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install PhonePe SDK from GitHub (no PyPI release)
+RUN pip install --no-cache-dir git+https://github.com/PhonePe/phonepe-pg-sdk-python.git
+
 # Copy application code
 COPY . .
 
