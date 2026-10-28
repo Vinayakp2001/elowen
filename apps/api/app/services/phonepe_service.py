@@ -11,15 +11,24 @@ from phonepe.sdk.pg.env import Env
 
 logger = logging.getLogger(__name__)
 
-# Singleton client — initialized once at module load
-_env = Env.PRODUCTION if settings.phonepe_env == "PRODUCTION" else Env.SANDBOX
-_client = StandardCheckoutClient(
-    settings.phonepe_client_id,
-    settings.phonepe_client_version,
-    settings.phonepe_client_secret,
-    _env,
-    False,  # should_publish_events
-)
+# Lazy singleton — initialized on first use to avoid crashing FastAPI startup
+# if env vars are missing (would cause checkout router to silently drop)
+_client: StandardCheckoutClient | None = None
+
+
+def _get_client() -> StandardCheckoutClient:
+    global _client
+    if _client is None:
+        _env = Env.PRODUCTION if settings.phonepe_env == "PRODUCTION" else Env.SANDBOX
+        _client = StandardCheckoutClient(
+            settings.phonepe_client_id,
+            settings.phonepe_client_version,
+            settings.phonepe_client_secret,
+            _env,
+            False,  # should_publish_events
+        )
+        logger.info("[PhonePe] Client initialized, env=%s", settings.phonepe_env)
+    return _client
 
 
 def _generate_merchant_order_id() -> str:
@@ -29,6 +38,7 @@ def _generate_merchant_order_id() -> str:
 
 async def initiate_payment(request: CheckoutSessionRequest) -> PhonePePaymentResponse:
     """Create a PhonePe payment order and return the redirect URL."""
+    client = _get_client()
     merchant_order_id = _generate_merchant_order_id()
 
     # Embed our merchantOrderId in the redirect URL — PhonePe does NOT append it automatically
@@ -47,7 +57,7 @@ async def initiate_payment(request: CheckoutSessionRequest) -> PhonePePaymentRes
         expire_after=1200,
     )
 
-    response = _client.pay(pay_request)
+    response = client.pay(pay_request)
     response_dict = vars(response)
     logger.info("[PhonePe] Payment initiated: merchant_order_id=%s, phonepe_order_id=%s",
                 merchant_order_id, response_dict.get("order_id"))
@@ -60,4 +70,4 @@ async def initiate_payment(request: CheckoutSessionRequest) -> PhonePePaymentRes
 
 def get_order_status(merchant_order_id: str):
     """Fetch current order status from PhonePe. Returns SDK status object."""
-    return _client.get_order_status(merchant_order_id=merchant_order_id)
+    return _get_client().get_order_status(merchant_order_id=merchant_order_id)
