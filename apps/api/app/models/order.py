@@ -12,6 +12,9 @@ class Order(SQLModel, table=True):
 
     id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="users.id")
+    # Legacy Stripe column — kept nullable so SQLModel matches the reconciled
+    # production table and any legacy Stripe-era rows remain readable.
+    stripe_session_id: Optional[str] = Field(default=None)
     # PhonePe fields — merchantOrderId we generate (e.g. "ELW" + uuid hex)
     phonepe_order_id: Optional[str] = Field(default=None, unique=True, index=True)
     # PhonePe's internal orderId (OMO...)
