@@ -10,10 +10,10 @@ import uuid
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-@router.get("/by-session/{session_id}", response_model=OrderOut)
-def get_order_by_session(session_id: str, db: Session = Depends(get_session)):
-    """Used on the checkout success page — no auth required (session_id is secret enough)."""
-    order = db.exec(select(Order).where(Order.stripe_session_id == session_id)).first()
+@router.get("/by-phonepe-order/{merchant_order_id}", response_model=OrderOut)
+def get_order_by_phonepe_order(merchant_order_id: str, db: Session = Depends(get_session)):
+    """Used on the checkout success page — no auth required (merchantOrderId is unguessable)."""
+    order = db.exec(select(Order).where(Order.phonepe_order_id == merchant_order_id)).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found.")
     return _build_order_out(order, db)
@@ -45,7 +45,7 @@ def _build_order_out(order: Order, db: Session) -> OrderOut:
     items = db.exec(select(OrderItem).where(OrderItem.order_id == order.id)).all()
     return OrderOut(
         id=order.id,
-        stripe_session_id=order.stripe_session_id,
+        phonepe_order_id=order.phonepe_order_id,
         status=order.status,
         total_amount=order.total_amount,
         currency=order.currency,

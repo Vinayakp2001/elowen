@@ -14,6 +14,7 @@ interface OrderItem {
 
 interface Order {
   id: string
+  phonepe_order_id?: string
   status: string
   total_amount: number
   currency: string
@@ -31,22 +32,35 @@ function formatPrice(amount: number, currency: string) {
   }).format(amount)
 }
 
+async function fetchOrderWithRetry(merchantOrderId: string, retries = 5, delayMs = 2000): Promise<Order> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await api.get<Order>(`/orders/by-phonepe-order/${merchantOrderId}`)
+    } catch {
+      if (attempt < retries - 1) {
+        await new Promise((res) => setTimeout(res, delayMs))
+      }
+    }
+  }
+  throw new Error("Order not found")
+}
+
 export function CheckoutSuccessClient() {
   const searchParams = useSearchParams()
-  const sessionId = searchParams.get("session_id")
+  const orderId = searchParams.get("order_id")
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!sessionId) {
+    if (!orderId) {
       setLoading(false)
       return
     }
-    api.get<Order>(`/orders/by-session/${sessionId}`)
+    fetchOrderWithRetry(orderId)
       .then(setOrder)
       .catch(() => setOrder(null))
       .finally(() => setLoading(false))
-  }, [sessionId])
+  }, [orderId])
 
   return (
     <div className="pt-16 min-h-screen bg-[#FDFAF5]">
@@ -88,7 +102,7 @@ export function CheckoutSuccessClient() {
                     Order Reference
                   </p>
                   <p className="font-sans text-[0.8rem] text-[#2C2C2C]">
-                    {order.id.slice(0, 8).toUpperCase()}
+                    {(order.phonepe_order_id ?? order.id).slice(0, 12).toUpperCase()}
                   </p>
                 </div>
 

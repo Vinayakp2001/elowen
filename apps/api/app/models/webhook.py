@@ -10,9 +10,9 @@ class WebhookEvent(SQLModel, table=True):
     __tablename__: str = "webhook_events"
 
     id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
-    stripe_event_id: str = Field(unique=True, index=True)
+    gateway_event_id: str = Field(unique=True, index=True)  # merchantOrderId for PhonePe
+    gateway: str = Field(default="phonepe")
     event_type: str
     processed: bool = Field(default=False)
     payload: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
     received_at: datetime = Field(default_factory=datetime.utcnow)
-

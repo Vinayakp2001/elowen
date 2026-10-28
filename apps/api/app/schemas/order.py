@@ -15,7 +15,7 @@ class OrderItemOut(BaseModel):
 
 class OrderOut(BaseModel):
     id: uuid.UUID
-    stripe_session_id: str
+    phonepe_order_id: Optional[str] = None
     status: str
     total_amount: Decimal
     currency: str

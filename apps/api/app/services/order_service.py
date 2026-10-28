@@ -6,6 +6,7 @@ from decimal import Decimal
 from sqlmodel import Session, select
 from app.models.order import Order, OrderItem, Payment
 import uuid
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -212,3 +213,83 @@ def _parse_shipping_address(stripe_session: dict, metadata: dict) -> dict:
         "phone": metadata.get("phone", ""),
         "email": metadata.get("email", ""),
     }
+
+
+def create_from_phonepe_callback(
+    merchant_order_id: str,
+    status_response,  # SDK status object (has .state, .payment_details, etc.)
+    metadata: dict,   # shipping/contact info stored during checkout
+    db: Session,
+) -> Order:
+    """Create Order, OrderItems, and Payment from a completed PhonePe webhook callback."""
+    status_dict = vars(status_response)
+
+    # Extract PhonePe's internal orderId and payment details
+    phonepe_internal_id: Optional[str] = status_dict.get("order_id")
+    payment_details = status_dict.get("payment_details") or []
+    phonepe_payment_id: Optional[str] = None
+    if payment_details:
+        try:
+            phonepe_payment_id = vars(payment_details[0]).get("transaction_id")
+        except Exception:
+            pass
+
+    # Amount: PhonePe returns amount in paise
+    amount_paise = status_dict.get("amount", 0)
+    total = Decimal(str(amount_paise)) / 100
+
+    customer_email = metadata.get("email", "")
+    shipping_address = {
+        "name": metadata.get("shipping_name", ""),
+        "address": metadata.get("shipping_address", ""),
+        "city": metadata.get("shipping_city", ""),
+        "state": metadata.get("shipping_state", ""),
+        "pincode": metadata.get("shipping_pincode", ""),
+        "country": "India",
+        "phone": metadata.get("phone", ""),
+        "email": customer_email,
+    }
+
+    items_data = _parse_items_metadata(metadata.get("items", ""), "")
+    user_id: Optional[uuid.UUID] = None
+    if metadata.get("user_id"):
+        try:
+            user_id = uuid.UUID(metadata["user_id"])
+        except ValueError:
+            pass
+
+    order = Order(
+        phonepe_order_id=merchant_order_id,
+        phonepe_internal_id=phonepe_internal_id,
+        status="paid",
+        total_amount=total,
+        currency="inr",
+        customer_email=customer_email,
+        shipping_address=shipping_address,
+        user_id=user_id,
+    )
+    db.add(order)
+    db.flush()
+
+    for item in items_data:
+        db.add(OrderItem(
+            order_id=order.id,
+            product_sku=item["sku"],
+            product_name=item.get("name", item["sku"]),
+            quantity=item["quantity"],
+            unit_price=Decimal(str(item.get("price", total / max(len(items_data), 1)))),
+        ))
+
+    payment = Payment(
+        order_id=order.id,
+        phonepe_payment_id=phonepe_payment_id,
+        amount=total,
+        status="succeeded",
+    )
+    db.add(payment)
+    db.commit()
+    db.refresh(order)
+
+    asyncio.create_task(_post_payment_tasks(order, items_data, db))
+
+    return order

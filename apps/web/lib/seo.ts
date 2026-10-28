@@ -17,12 +17,12 @@ export function absoluteUrl(path: string): string {
 }
 
 /**
- * Returns a default OG image object pointing to the fallback brand image.
- * Used on pages that don't have a specific CMS-sourced OG image.
+ * Returns a default OG image object pointing to the auto-generated brand OG image.
+ * Served by apps/web/app/opengraph-image.tsx via Next.js ImageResponse.
  */
 export function defaultOgImage() {
   return {
-    url: absoluteUrl("/og-default.jpg"),
+    url: absoluteUrl("/opengraph-image"),
     width: 1200,
     height: 630,
     alt: "Elowen Fine Jewelry",

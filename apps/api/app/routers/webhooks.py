@@ -1,51 +1,65 @@
+import logging
 from fastapi import APIRouter, Request, HTTPException, Depends
 from sqlmodel import Session, select
-import stripe
-from app.config import settings
 from app.database import get_session
 from app.models.webhook import WebhookEvent
-from app.services.order_service import create_from_session
+from app.services import phonepe_service
+from app.services.order_service import create_from_phonepe_callback
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
-stripe.api_key = settings.stripe_secret_key
 
-
-@router.post("/stripe")
-async def stripe_webhook(request: Request, db: Session = Depends(get_session)):
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-
+@router.post("/phonepe")
+async def phonepe_webhook(request: Request, db: Session = Depends(get_session)):
+    """
+    PhonePe S2S callback.
+    PhonePe sends { merchantOrderId: str, ... } in the JSON body.
+    We verify state via SDK before creating the order.
+    """
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.stripe_webhook_secret
-        )
-    except stripe.SignatureVerificationError:
-        raise HTTPException(status_code=400, detail="Invalid webhook signature.")
+        body = await request.json()
     except Exception:
-        raise HTTPException(status_code=400, detail="Webhook error.")
+        raise HTTPException(status_code=400, detail="Invalid JSON body.")
 
-    # Idempotency check
+    merchant_order_id: str = body.get("merchantOrderId", "")
+    if not merchant_order_id:
+        raise HTTPException(status_code=400, detail="Missing merchantOrderId.")
+
+    # Idempotency check — skip if already processed
     existing = db.exec(
-        select(WebhookEvent).where(WebhookEvent.stripe_event_id == event["id"])
+        select(WebhookEvent).where(WebhookEvent.gateway_event_id == merchant_order_id)
     ).first()
     if existing and existing.processed:
+        logger.info("[Webhook] Duplicate PhonePe callback ignored: %s", merchant_order_id)
         return {"received": True}
 
-    # Log event
+    # Verify payment state with PhonePe
+    try:
+        status = phonepe_service.get_order_status(merchant_order_id)
+    except Exception as e:
+        logger.error("[Webhook] Failed to fetch PhonePe status for %s: %s", merchant_order_id, str(e))
+        raise HTTPException(status_code=502, detail="Failed to verify payment status.")
+
+    state = getattr(status, "state", None) or vars(status).get("state")
+
+    # Log the event regardless of state
     webhook_event = existing or WebhookEvent(
-        stripe_event_id=event["id"],
-        event_type=event["type"],
-        payload=dict(event),
+        gateway_event_id=merchant_order_id,
+        gateway="phonepe",
+        event_type=f"PAYMENT_{state}",
+        payload=body,
     )
     db.add(webhook_event)
     db.flush()
 
-    # Handle events
-    if event["type"] == "checkout.session.completed":
-        session_data = event["data"]["object"]
-        create_from_session(session_data, db)
+    if state == "COMPLETED":
+        # Pass checkout metadata stored in webhook body (frontend sends it alongside)
+        metadata = body.get("metadata", {})
+        create_from_phonepe_callback(merchant_order_id, status, metadata, db)
         webhook_event.processed = True
+    else:
+        logger.info("[Webhook] PhonePe order %s state=%s — skipping order creation.", merchant_order_id, state)
 
     db.commit()
     return {"received": True}

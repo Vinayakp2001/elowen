@@ -5,9 +5,11 @@ class Settings(BaseSettings):
     # Database
     database_url: str
 
-    # Stripe
-    stripe_secret_key: str
-    stripe_webhook_secret: str
+    # PhonePe
+    phonepe_client_id: str
+    phonepe_client_secret: str
+    phonepe_client_version: int = 1
+    phonepe_env: str = "PRODUCTION"
 
     # App
     frontend_url: str = "http://localhost:3000"

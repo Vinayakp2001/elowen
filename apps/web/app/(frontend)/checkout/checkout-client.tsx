@@ -95,7 +95,7 @@ export default function CheckoutClient() {
     setLoading(true)
 
     try {
-      const res = await api.post<{ session_id: string; url: string }>(
+      const res = await api.post<{ order_id: string; url: string }>(
         "/checkout/session",
         {
           items: items.map((i) => ({
@@ -113,13 +113,11 @@ export default function CheckoutClient() {
           shipping_city: city.trim(),
           shipping_state: state.trim(),
           shipping_pincode: pincode.trim(),
-          success_url: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${window.location.origin}/checkout/cancel`,
         },
         token ?? undefined
       )
 
-      // Clear cart and redirect to Stripe
+      // Clear cart and redirect to PhonePe
       clearCart()
       window.location.href = res.url
     } catch (err) {
