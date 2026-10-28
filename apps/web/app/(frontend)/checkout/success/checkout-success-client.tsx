@@ -20,6 +20,8 @@ interface Order {
   currency: string
   customer_email?: string
   shipping_address?: Record<string, string>
+  awb_code?: string
+  courier_name?: string
   items: OrderItem[]
   created_at: string
 }
@@ -146,6 +148,25 @@ export function CheckoutSuccessClient() {
                     </p>
                   </div>
                 )}
+
+                <div className="pt-2 border-t border-[#E8D9C0]">
+                  <p className="font-sans text-[0.7rem] tracking-[0.1em] uppercase text-[#8C7B6B] mb-2">
+                    Dispatch Status
+                  </p>
+                  {order.awb_code ? (
+                    <p className="font-sans text-[0.8rem] text-[#2C2C2C]">
+                      {order.courier_name} &mdash; {order.awb_code}
+                      {" "}
+                      <Link href="/account" className="text-[#B8975A] hover:underline">
+                        Track
+                      </Link>
+                    </p>
+                  ) : (
+                    <p className="font-sans text-[0.8rem] text-[#8C7B6B]">
+                      Your order is being prepared for dispatch.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           ) : (

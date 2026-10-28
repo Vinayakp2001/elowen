@@ -21,6 +21,8 @@ class OrderOut(BaseModel):
     currency: str
     customer_email: Optional[str] = None
     shipping_address: Optional[Any] = None
+    shiprocket_order_id: Optional[str] = None
+    shiprocket_shipment_id: Optional[str] = None
     awb_code: Optional[str] = None
     courier_name: Optional[str] = None
     items: List[OrderItemOut]

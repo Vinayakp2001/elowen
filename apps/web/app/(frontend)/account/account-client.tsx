@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuthStore } from "@/lib/store/auth"
-import { api } from "@/lib/api/client"
+import { api, ApiError } from "@/lib/api/client"
 
 interface OrderItem {
   sku: string
@@ -24,6 +24,12 @@ interface Order {
   awb_code?: string
   courier_name?: string
   shipping_address?: Record<string, string>
+}
+
+interface TrackingState {
+  loading: boolean
+  status?: string
+  error?: string
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -66,6 +72,22 @@ export default function AccountClient() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
+  const [trackingStates, setTrackingStates] = useState<Record<string, TrackingState>>({})
+
+  async function fetchTracking(orderId: string) {
+    setTrackingStates((prev) => ({ ...prev, [orderId]: { loading: true } }))
+    try {
+      const data = await api.get<{ tracking_data: { shipment_track: { current_status: string }[] } }>(
+        `/orders/${orderId}/tracking`,
+        token ?? undefined,
+      )
+      const currentStatus = data?.tracking_data?.shipment_track?.[0]?.current_status ?? "Status unavailable"
+      setTrackingStates((prev) => ({ ...prev, [orderId]: { loading: false, status: currentStatus } }))
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "Unable to fetch tracking"
+      setTrackingStates((prev) => ({ ...prev, [orderId]: { loading: false, error: message } }))
+    }
+  }
 
   useEffect(() => {
     if (!user || !token) {
@@ -210,6 +232,23 @@ export default function AccountClient() {
                             <p className="font-sans text-[0.8rem] text-[#2C2C2C]">
                               {order.courier_name} &mdash; {order.awb_code}
                             </p>
+                            <button
+                              onClick={() => fetchTracking(order.id)}
+                              disabled={trackingStates[order.id]?.loading}
+                              className="mt-2 font-sans text-[0.7rem] tracking-[0.08em] uppercase text-[#B8975A] hover:underline disabled:opacity-50"
+                            >
+                              {trackingStates[order.id]?.loading ? "Fetching…" : "Track Shipment"}
+                            </button>
+                            {trackingStates[order.id]?.status && (
+                              <p className="mt-1 font-sans text-[0.8rem] text-[#2C2C2C]">
+                                {trackingStates[order.id].status}
+                              </p>
+                            )}
+                            {trackingStates[order.id]?.error && (
+                              <p className="mt-1 font-sans text-[0.75rem] text-red-500">
+                                {trackingStates[order.id].error}
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>

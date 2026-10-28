@@ -101,31 +101,49 @@ async def _post_payment_tasks(order: Order, items_data: list, db: Session):
         _decrement_inventory(skus)
 
     # 2. Create Shiprocket shipment
+    shiprocket_order_id: Optional[str] = None
+    shipment_id: Optional[str] = None
+    awb_code: Optional[str] = None
+    courier_name: Optional[str] = None
+
     try:
         sr_payload = build_shiprocket_order(order, _get_order_items_for_sr(order, items_data), shipping_address)
         sr_response = await create_shipment(sr_payload)
-        shipment_id = str(sr_response.get("shipment_id", ""))
+        shiprocket_order_id = str(sr_response.get("order_id", "")) or None
+        shipment_id = str(sr_response.get("shipment_id", "")) or None
+    except Exception as e:
+        logger.error("[Shiprocket] create_shipment failed for order %s: %s", order.id, str(e))
 
-        if shipment_id:
+    if shipment_id:
+        try:
             awb_response = await assign_awb(shipment_id)
             awb_data = awb_response.get("response", {}).get("data", {})
-            awb_code = awb_data.get("awb_code", "")
-            courier_name = awb_data.get("courier_name", "")
+            awb_code = awb_data.get("awb_code") or None
+            courier_name = awb_data.get("courier_name") or None
+        except Exception as e:
+            logger.error("[Shiprocket] assign_awb failed for order %s shipment %s: %s", order.id, shipment_id, str(e))
 
-            # Update order with shipment info
+    # Persist whatever we obtained (even partial — e.g. shipment_id without AWB)
+    if shiprocket_order_id or shipment_id or awb_code:
+        try:
             from app.database import engine
             from sqlmodel import Session as DBSession
             with DBSession(engine) as session:
                 db_order = session.get(Order, order.id)
                 if db_order:
-                    db_order.shiprocket_shipment_id = shipment_id
-                    db_order.awb_code = awb_code
-                    db_order.courier_name = courier_name
+                    if shiprocket_order_id:
+                        db_order.shiprocket_order_id = shiprocket_order_id
+                    if shipment_id:
+                        db_order.shiprocket_shipment_id = shipment_id
+                    if awb_code:
+                        db_order.awb_code = awb_code
+                    if courier_name:
+                        db_order.courier_name = courier_name
                     db_order.status = "processing"
                     session.add(db_order)
                     session.commit()
-    except Exception as e:
-        logger.error("[Shiprocket] Failed to create shipment for order %s: %s", order.id, str(e))
+        except Exception as e:
+            logger.error("[Shiprocket] DB update failed for order %s: %s", order.id, str(e))
 
     # 3. Send order confirmation email
     if order.customer_email:
