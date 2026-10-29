@@ -264,7 +264,12 @@ export async function getPolicyBySlug(slug: string) {
     return {
       title: doc.title as string,
       slug: { current: doc.slug as string },
-      body: doc.body, // Lexical JSON
+      body: doc.body, // Lexical JSON (optional single body)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sections: ((doc.sections as any[]) ?? []).map((s: any) => ({
+        heading: s.heading as string,
+        body: s.body, // Lexical JSON
+      })),
     }
   } catch {
     return null

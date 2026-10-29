@@ -1,7 +1,10 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { getPolicyBySlug } from "@/lib/payload/queries"
+import { RichText } from "@/components/ui/rich-text"
 
-export const revalidate = false
+// Revalidate so CMS-authored policies are picked up without a redeploy.
+export const revalidate = 60
 
 // ---------------------------------------------------------------------------
 // Static policy content — no CMS required
@@ -206,11 +209,12 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const policy = policies[slug]
-  if (!policy) return {}
+  const cms = await getPolicyBySlug(slug)
+  const title = cms?.title ?? policies[slug]?.title
+  if (!title) return {}
   return {
-    title: policy.title,
-    description: `Read Elowen's ${policy.title} — fine jewelry store policies covering your rights and our commitments.`,
+    title,
+    description: `Read Elowen's ${title} — fine jewelry store policies covering your rights and our commitments.`,
     alternates: { canonical: `/policies/${slug}` },
     robots: { index: false, follow: false },
   }
@@ -218,22 +222,46 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PolicyPage({ params }: Props) {
   const { slug } = await params
-  const policy = policies[slug]
-  if (!policy) notFound()
+
+  // Prefer CMS content if a policy doc exists for this slug; otherwise fall
+  // back to the static content below. Behaviour is identical to before until
+  // someone adds a matching policy in the Payload admin.
+  const cms = await getPolicyBySlug(slug)
+  const staticPolicy = policies[slug]
+
+  if (!cms && !staticPolicy) notFound()
+
+  const title = cms?.title ?? staticPolicy.title
 
   return (
     <div className="pt-16 min-h-screen bg-[#FDFAF5]">
       <div className="max-w-[720px] mx-auto px-6 py-16">
-        <h1 className="font-serif text-[2.5rem] text-[#2C2C2C] mb-10">{policy.title}</h1>
+        <h1 className="font-serif text-[2.5rem] text-[#2C2C2C] mb-10">{title}</h1>
         <div className="flex flex-col gap-10">
-          {policy.sections.map((section) => (
-            <div key={section.heading}>
-              <h2 className="font-serif text-[1.25rem] text-[#2C2C2C] mb-3">{section.heading}</h2>
-              <p className="font-sans text-[0.875rem] text-[#8C7B6B] leading-relaxed whitespace-pre-line">
-                {section.body}
-              </p>
-            </div>
-          ))}
+          {cms ? (
+            cms.sections.length > 0 ? (
+              // Structured CMS sections — matches the static multi-section layout.
+              cms.sections.map((section, i) => (
+                <div key={`${section.heading}-${i}`}>
+                  <h2 className="font-serif text-[1.25rem] text-[#2C2C2C] mb-3">{section.heading}</h2>
+                  {section.body ? <RichText content={section.body} /> : null}
+                </div>
+              ))
+            ) : cms.body ? (
+              // Single rich-text body fallback for CMS docs without sections.
+              <RichText content={cms.body} />
+            ) : null
+          ) : (
+            // Static fallback — unchanged default content.
+            staticPolicy.sections.map((section) => (
+              <div key={section.heading}>
+                <h2 className="font-serif text-[1.25rem] text-[#2C2C2C] mb-3">{section.heading}</h2>
+                <p className="font-sans text-[0.875rem] text-[#8C7B6B] leading-relaxed whitespace-pre-line">
+                  {section.body}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
