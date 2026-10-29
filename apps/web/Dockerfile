@@ -38,6 +38,13 @@ COPY --from=builder /app/payload.config.ts ./payload.config.ts
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/collections ./collections
 COPY --from=builder /app/globals ./globals
+# Seed sources + committed placeholder assets. The seed is a deliberate manual
+# one-shot run from THIS image (not the runner), e.g.
+#   docker run --rm --env-file .env --network elowen_elowen_net \
+#     ghcr.io/<owner>/elowen-web-migrator:latest \
+#     node_modules/.bin/payload run src/seed/index.ts
+# It is intentionally NOT wired into CI/CD. See src/seed/README.md.
+COPY --from=builder /app/src/seed ./src/seed
 
 CMD ["node_modules/.bin/payload", "migrate"]
 

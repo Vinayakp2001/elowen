@@ -9,6 +9,7 @@
     "build": "npm run generate:importmap && next build",
     "start": "next start",
     "lint": "eslint",
+    "seed": "payload run src/seed/index.ts",
     "generate:importmap": "node --import tsx ./scripts/generate-importmap.mjs"
   },
   "dependencies": {
