@@ -50,6 +50,7 @@ async def send_order_confirmation(
     items: list,
     total: float,
     shipping_address: dict,
+    cod: bool = False,
 ) -> bool:
     items_html = "".join(
         f"<tr><td style='padding:8px 0;'>{item['name']}</td>"
@@ -58,6 +59,16 @@ async def send_order_confirmation(
         for item in items
     )
     address = shipping_address
+    heading = "Your order is confirmed." if cod else "Thank you for your order."
+    total_label = "Pay on Delivery" if cod else "Total"
+    cod_note = (
+        f"<p style='font-size:13px;color:#8C7B6B;margin:24px 0 0;'>"
+        f"This is a Cash on Delivery order. Please keep "
+        f"<strong style='color:#2C2C2C;'>&#8377;{total:.2f}</strong> ready to pay "
+        f"when your order is delivered.</p>"
+        if cod
+        else ""
+    )
     html = f"""
     <div style="font-family:'DM Sans',sans-serif;max-width:600px;margin:0 auto;color:#2C2C2C;">
       <div style="padding:40px 0;border-bottom:1px solid #E8D9C0;">
@@ -70,7 +81,7 @@ async def send_order_confirmation(
           Order Confirmation
         </p>
         <h2 style="font-family:Georgia,serif;font-size:22px;font-weight:400;margin:0 0 24px;">
-          Thank you for your order.
+          {heading}
         </h2>
         <p style="font-size:13px;color:#8C7B6B;margin:0 0 32px;">
           Order reference: <strong style="color:#2C2C2C;">{order_id[:8].upper()}</strong>
@@ -78,10 +89,11 @@ async def send_order_confirmation(
         <table style="width:100%;border-collapse:collapse;border-top:1px solid #E8D9C0;">
           {items_html}
           <tr style="border-top:1px solid #E8D9C0;">
-            <td colspan="2" style="padding:12px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Total</td>
+            <td colspan="2" style="padding:12px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">{total_label}</td>
             <td style="padding:12px 0;text-align:right;font-weight:500;">&#8377;{total:.2f}</td>
           </tr>
         </table>
+        {cod_note}
         <div style="margin-top:32px;">
           <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#8C7B6B;margin:0 0 8px;">
             Shipping to
@@ -101,7 +113,12 @@ async def send_order_confirmation(
       </div>
     </div>
     """
-    return await _send(to, "Your Elowen order has been confirmed", html)
+    subject = (
+        "Your Elowen order is confirmed — Pay on Delivery"
+        if cod
+        else "Your Elowen order has been confirmed"
+    )
+    return await _send(to, subject, html)
 
 
 async def send_shipping_update(

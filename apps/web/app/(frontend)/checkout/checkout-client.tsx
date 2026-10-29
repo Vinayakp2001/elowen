@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useCartStore } from "@/lib/store/cart"
@@ -34,6 +34,51 @@ export default function CheckoutClient() {
   const [couponError, setCouponError] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [codBySku, setCodBySku] = useState<Record<string, boolean>>({})
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online")
+
+  // Fetch per-SKU COD availability whenever the cart items change.
+  const skuKey = items.map((i) => i.sku).sort().join(",")
+  useEffect(() => {
+    const skus = skuKey.split(",").filter(Boolean)
+    if (skus.length === 0) {
+      setCodBySku({})
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/products-by-skus?skus=${encodeURIComponent(skus.join(","))}`)
+        if (!res.ok) throw new Error("lookup failed")
+        const data: Array<{ sku: string; codAvailable?: boolean }> = await res.json()
+        if (cancelled) return
+        const map: Record<string, boolean> = {}
+        for (const p of data) map[p.sku] = p.codAvailable === true
+        setCodBySku(map)
+      } catch {
+        // Fail safe: no eligibility info -> online only.
+        if (!cancelled) setCodBySku({})
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [skuKey])
+
+  // Optional value cap from public env (blank = no cap).
+  const codCapRaw = process.env.NEXT_PUBLIC_COD_MAX_VALUE
+  const codCap = codCapRaw && codCapRaw.trim() !== "" ? Number(codCapRaw) : null
+
+  const cartTotal = couponDiscount ? subtotal() - couponDiscount : subtotal()
+  const codEligible =
+    items.length > 0 &&
+    items.every((i) => codBySku[i.sku] === true) &&
+    (codCap == null || cartTotal <= codCap)
+
+  // If the cart becomes COD-ineligible, reset the selection back to online.
+  useEffect(() => {
+    if (!codEligible && paymentMethod === "cod") setPaymentMethod("online")
+  }, [codEligible, paymentMethod])
 
   if (items.length === 0) {
     return (
@@ -84,7 +129,7 @@ export default function CheckoutClient() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const validationErrors = validate()
     if (Object.keys(validationErrors).length > 0) {
@@ -94,32 +139,43 @@ export default function CheckoutClient() {
     setErrors({})
     setLoading(true)
 
-    try {
-      const res = await api.post<{ order_id: string; url: string }>(
-        "/checkout/session",
-        {
-          items: items.map((i) => ({
-            sku: i.sku,
-            product_name: i.productTitle,
-            quantity: i.quantity,
-            unit_price: i.unitPrice,
-          })),
-          coupon_code: couponCode.trim() || undefined,
-          user_id: user?.id,
-          email,
-          phone,
-          shipping_name: name.trim(),
-          shipping_address: address.trim(),
-          shipping_city: city.trim(),
-          shipping_state: state.trim(),
-          shipping_pincode: pincode.trim(),
-        },
-        token ?? undefined
-      )
+    const payload = {
+      items: items.map((i) => ({
+        sku: i.sku,
+        product_name: i.productTitle,
+        quantity: i.quantity,
+        unit_price: i.unitPrice,
+      })),
+      coupon_code: couponCode.trim() || undefined,
+      user_id: user?.id,
+      email,
+      phone,
+      shipping_name: name.trim(),
+      shipping_address: address.trim(),
+      shipping_city: city.trim(),
+      shipping_state: state.trim(),
+      shipping_pincode: pincode.trim(),
+    }
 
-      // Clear cart and redirect to PhonePe
-      clearCart()
-      window.location.href = res.url
+    try {
+      if (paymentMethod === "cod" && codEligible) {
+        const res = await api.post<{ order_id: string }>(
+          "/checkout/cod",
+          { ...payload, cod_requested: true },
+          token ?? undefined
+        )
+        clearCart()
+        window.location.href = `/checkout/success?order_id=${encodeURIComponent(res.order_id)}&cod=1`
+      } else {
+        const res = await api.post<{ order_id: string; url: string }>(
+          "/checkout/session",
+          payload,
+          token ?? undefined
+        )
+        // Clear cart and redirect to PhonePe
+        clearCart()
+        window.location.href = res.url
+      }
     } catch (err) {
       setErrors({
         form: err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
@@ -238,12 +294,57 @@ export default function CheckoutClient() {
               </div>
             </div>
 
+            {/* Payment method chooser — shown only when every item allows COD */}
+            {codEligible && (
+              <div>
+                <h2 className="font-serif text-lg text-[#2C2C2C] mb-4">Payment Method</h2>
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-3 border border-[#E8D9C0] p-4 cursor-pointer hover:border-[#B8975A] transition-colors duration-200">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="online"
+                      checked={paymentMethod === "online"}
+                      onChange={() => setPaymentMethod("online")}
+                      className="accent-[#B8975A]"
+                    />
+                    <span className="font-sans text-[0.85rem] text-[#2C2C2C]">
+                      Pay Online
+                      <span className="block font-sans text-[0.7rem] text-[#8C7B6B]">
+                        UPI, cards, netbanking &amp; wallets via PhonePe
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-3 border border-[#E8D9C0] p-4 cursor-pointer hover:border-[#B8975A] transition-colors duration-200">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cod"
+                      checked={paymentMethod === "cod"}
+                      onChange={() => setPaymentMethod("cod")}
+                      className="accent-[#B8975A]"
+                    />
+                    <span className="font-sans text-[0.85rem] text-[#2C2C2C]">
+                      Cash on Delivery
+                      <span className="block font-sans text-[0.7rem] text-[#8C7B6B]">
+                        Pay {formatPrice(cartTotal)} when your order arrives
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            )}
+
             {errors.form && (
               <p className="font-sans text-[0.75rem] text-red-500">{errors.form}</p>
             )}
 
             <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-              {loading ? "Processing..." : "Proceed to Payment"}
+              {loading
+                ? "Processing..."
+                : paymentMethod === "cod"
+                  ? "Place COD Order"
+                  : "Proceed to Payment"}
             </Button>
           </form>
 

@@ -32,6 +32,7 @@ function transformProductCard(doc: any) {
     price: doc.price as number,
     compareAtPrice: doc.compareAtPrice as number | undefined,
     inStock: doc.inStock as boolean,
+    codAvailable: (doc.codAvailable as boolean) ?? false,
     isNew: doc.isNew as boolean | undefined,
     isFeatured: doc.isFeatured as boolean | undefined,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

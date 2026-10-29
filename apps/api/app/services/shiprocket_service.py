@@ -1,7 +1,6 @@
 """
 Shiprocket integration service.
 
-All methods are fully implemented for the Shiprocket API v2.
 Set SHIPROCKET_ENABLED=true and add SHIPROCKET_EMAIL / SHIPROCKET_PASSWORD
 in .env to activate real API calls. Until then, methods log and return
 mock responses so the order flow works end-to-end in development.
@@ -17,13 +16,43 @@ logger = logging.getLogger(__name__)
 
 _token_cache: Optional[str] = None
 
+# Effective enabled state — may be False even if SHIPROCKET_ENABLED=true
+# when credentials are missing (determined on first call or module init)
+_effective_enabled: Optional[bool] = None
 
-async def _get_token() -> Optional[str]:
+
+def _check_effective_enabled() -> bool:
+    """Returns True only if enabled AND credentials are present."""
+    global _effective_enabled
+    if _effective_enabled is not None:
+        return _effective_enabled
+
+    if not settings.shiprocket_enabled:
+        _effective_enabled = False
+        return False
+
+    if not settings.shiprocket_email or not settings.shiprocket_password:
+        logger.warning(
+            "[Shiprocket] SHIPROCKET_ENABLED=true but SHIPROCKET_EMAIL or "
+            "SHIPROCKET_PASSWORD is missing — falling back to stub mode."
+        )
+        _effective_enabled = False
+        return False
+
+    _effective_enabled = True
+    return True
+
+
+async def _get_token(force_refresh: bool = False) -> Optional[str]:
+    """Returns a cached auth token, refreshing if force_refresh=True or cache is empty."""
     global _token_cache
+    if force_refresh:
+        _token_cache = None
+
     if _token_cache:
         return _token_cache
 
-    if not settings.shiprocket_enabled:
+    if not _check_effective_enabled():
         return None
 
     async with httpx.AsyncClient() as client:
@@ -34,6 +63,26 @@ async def _get_token() -> Optional[str]:
         resp.raise_for_status()
         _token_cache = resp.json().get("token")
         return _token_cache
+
+
+async def _api_call(method: str, url: str, **kwargs) -> dict:
+    """Makes an authenticated API call; retries once on 401 with a fresh token."""
+    token = await _get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    async with httpx.AsyncClient() as client:
+        resp = await getattr(client, method)(url, headers=headers, **kwargs)
+        if resp.status_code == 401:
+            logger.info("[Shiprocket] 401 received — refreshing token and retrying")
+            token = await _get_token(force_refresh=True)
+            if not token:
+                raise httpx.HTTPStatusError(
+                    "Token refresh failed", request=resp.request, response=resp
+                )
+            headers = {"Authorization": f"Bearer {token}"}
+            resp = await getattr(client, method)(url, headers=headers, **kwargs)
+        resp.raise_for_status()
+        return resp.json()
 
 
 async def create_shipment(order_data: dict) -> dict:
@@ -49,7 +98,7 @@ async def create_shipment(order_data: dict) -> dict:
       order_items: [{ name, sku, units, selling_price }],
       payment_method, sub_total, length, breadth, height, weight
     """
-    if not settings.shiprocket_enabled:
+    if not _check_effective_enabled():
         logger.info("[Shiprocket STUB] create_shipment called with order_id=%s", order_data.get("order_id"))
         return {
             "order_id": order_data.get("order_id"),
@@ -60,20 +109,16 @@ async def create_shipment(order_data: dict) -> dict:
             "courier_name": "",
         }
 
-    token = await _get_token()
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            f"{settings.shiprocket_base_url}/orders/create/adhoc",
-            json=order_data,
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        resp.raise_for_status()
-        return resp.json()
+    return await _api_call(
+        "post",
+        f"{settings.shiprocket_base_url}/orders/create/adhoc",
+        json=order_data,
+    )
 
 
 async def assign_awb(shipment_id: str, courier_id: Optional[int] = None) -> dict:
     """Assigns AWB (Air Waybill) number to a shipment."""
-    if not settings.shiprocket_enabled:
+    if not _check_effective_enabled():
         logger.info("[Shiprocket STUB] assign_awb called for shipment_id=%s", shipment_id)
         return {
             "awb_assign_status": 1,
@@ -85,24 +130,20 @@ async def assign_awb(shipment_id: str, courier_id: Optional[int] = None) -> dict
             },
         }
 
-    token = await _get_token()
     payload: dict = {"shipment_id": shipment_id}
     if courier_id:
         payload["courier_id"] = courier_id
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            f"{settings.shiprocket_base_url}/courier/assign/awb",
-            json=payload,
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        resp.raise_for_status()
-        return resp.json()
+    return await _api_call(
+        "post",
+        f"{settings.shiprocket_base_url}/courier/assign/awb",
+        json=payload,
+    )
 
 
 async def track_shipment(awb_code: str) -> dict:
     """Returns current tracking status for a shipment."""
-    if not settings.shiprocket_enabled:
+    if not _check_effective_enabled():
         logger.info("[Shiprocket STUB] track_shipment called for awb=%s", awb_code)
         return {
             "tracking_data": {
@@ -121,37 +162,37 @@ async def track_shipment(awb_code: str) -> dict:
             }
         }
 
-    token = await _get_token()
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            f"{settings.shiprocket_base_url}/courier/track/awb/{awb_code}",
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        resp.raise_for_status()
-        return resp.json()
+    return await _api_call(
+        "get",
+        f"{settings.shiprocket_base_url}/courier/track/awb/{awb_code}",
+    )
 
 
 async def cancel_shipment(awb_codes: list[str]) -> dict:
     """Cancels one or more shipments by AWB code."""
-    if not settings.shiprocket_enabled:
+    if not _check_effective_enabled():
         logger.info("[Shiprocket STUB] cancel_shipment called for awbs=%s", awb_codes)
         return {"message": "Shipments cancelled successfully (STUB)", "status": 200}
 
-    token = await _get_token()
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            f"{settings.shiprocket_base_url}/orders/cancel/shipment/awbs",
-            json={"awbs": awb_codes},
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        resp.raise_for_status()
-        return resp.json()
+    return await _api_call(
+        "post",
+        f"{settings.shiprocket_base_url}/orders/cancel/shipment/awbs",
+        json={"awbs": awb_codes},
+    )
 
 
-def build_shiprocket_order(order, order_items: list, shipping_address: dict) -> dict:
+def build_shiprocket_order(
+    order,
+    order_items: list,
+    shipping_address: dict,
+    payment_method: str = "Prepaid",
+) -> dict:
     """
     Constructs the Shiprocket order payload from our internal Order model.
     Adjust pickup_location to match your Shiprocket warehouse name.
+
+    `payment_method` is "Prepaid" (online/PhonePe) or "COD". For COD,
+    Shiprocket uses `sub_total` as the amount to collect on delivery.
     """
     name = shipping_address.get("name", "")
     phone = shipping_address.get("phone", "")
@@ -183,7 +224,7 @@ def build_shiprocket_order(order, order_items: list, shipping_address: dict) -> 
             }
             for item in order_items
         ],
-        "payment_method": "Prepaid",
+        "payment_method": payment_method,
         "sub_total": float(order.total_amount),
         "length": 10,
         "breadth": 10,

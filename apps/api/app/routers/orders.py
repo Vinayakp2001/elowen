@@ -73,6 +73,7 @@ def _build_order_out(order: Order, db: Session) -> OrderOut:
     return OrderOut(
         id=order.id,
         phonepe_order_id=order.phonepe_order_id,
+        payment_method=order.payment_method,
         status=order.status,
         total_amount=order.total_amount,
         currency=order.currency,

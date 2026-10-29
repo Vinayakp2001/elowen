@@ -15,6 +15,8 @@ class CheckoutSessionRequest(BaseModel):
     items: List[CheckoutItem]
     coupon_code: Optional[str] = None
     user_id: Optional[str] = None
+    # Set true when the client requests Cash on Delivery.
+    cod_requested: Optional[bool] = False
     # Contact
     email: Optional[str] = None
     phone: Optional[str] = None
@@ -29,3 +31,7 @@ class CheckoutSessionRequest(BaseModel):
 class PhonePePaymentResponse(BaseModel):
     order_id: str  # our merchantOrderId
     url: str       # PhonePe redirect URL
+
+
+class CodOrderResponse(BaseModel):
+    order_id: str  # our internal Order UUID

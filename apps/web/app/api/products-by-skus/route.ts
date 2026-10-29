@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
       price: p.price,
       imageUrl: p.images?.[0]?.url ?? "",
       slug: p.slug?.current ?? "",
+      codAvailable: p.codAvailable ?? false,
     }))
 
   return NextResponse.json(result)

@@ -83,13 +83,18 @@ def create_from_session(stripe_session: dict, db: Session) -> Order:
 
     # Trigger post-payment async tasks (Shiprocket + email)
     # Run in background — do not block webhook response
-    asyncio.create_task(_post_payment_tasks(order, items_data, db))
+    asyncio.create_task(_post_order_tasks(order, items_data, db, cod=False))
 
     return order
 
 
-async def _post_payment_tasks(order: Order, items_data: list, db: Session):
-    """Async post-payment: decrement inventory, create Shiprocket shipment, send confirmation email."""
+async def _post_order_tasks(order: Order, items_data: list, db: Session, cod: bool = False):
+    """Async post-order: decrement inventory, create Shiprocket shipment, send confirmation email.
+
+    Shared by both the PhonePe (prepaid) and COD paths. When `cod` is True the
+    Shiprocket shipment is created in COD mode and the confirmation email uses
+    COD wording.
+    """
     from app.services.shiprocket_service import build_shiprocket_order, create_shipment, assign_awb
     from app.services.email_service import send_order_confirmation
 
@@ -107,7 +112,12 @@ async def _post_payment_tasks(order: Order, items_data: list, db: Session):
     courier_name: Optional[str] = None
 
     try:
-        sr_payload = build_shiprocket_order(order, _get_order_items_for_sr(order, items_data), shipping_address)
+        sr_payload = build_shiprocket_order(
+            order,
+            _get_order_items_for_sr(order, items_data),
+            shipping_address,
+            payment_method="COD" if cod else "Prepaid",
+        )
         sr_response = await create_shipment(sr_payload)
         shiprocket_order_id = str(sr_response.get("order_id", "")) or None
         shipment_id = str(sr_response.get("shipment_id", "")) or None
@@ -139,7 +149,10 @@ async def _post_payment_tasks(order: Order, items_data: list, db: Session):
                         db_order.awb_code = awb_code
                     if courier_name:
                         db_order.courier_name = courier_name
-                    db_order.status = "processing"
+                    # COD orders stay "confirmed" (unpaid-but-placed) until
+                    # delivered; prepaid orders advance to "processing".
+                    if not cod:
+                        db_order.status = "processing"
                     session.add(db_order)
                     session.commit()
         except Exception as e:
@@ -161,6 +174,7 @@ async def _post_payment_tasks(order: Order, items_data: list, db: Session):
                 ],
                 total=float(order.total_amount),
                 shipping_address=order.shipping_address or {},
+                cod=cod,
             )
         except Exception as e:
             logger.error("[Email] Failed to send confirmation for order %s: %s", order.id, str(e))
@@ -308,6 +322,73 @@ def create_from_phonepe_callback(
     db.commit()
     db.refresh(order)
 
-    asyncio.create_task(_post_payment_tasks(order, items_data, db))
+    asyncio.create_task(_post_order_tasks(order, items_data, db, cod=False))
+
+    return order
+
+
+def create_cod_order(request, db: Session) -> Order:
+    """Create a Cash on Delivery Order (+ items + pending payment) synchronously.
+
+    No PhonePe/Stripe ids. Order is persisted in a confirmed/unpaid state and
+    post-order tasks (inventory, Shiprocket COD shipment, COD email) are
+    scheduled in the background.
+    """
+    total = Decimal(str(sum(item.unit_price * item.quantity for item in request.items)))
+
+    customer_email = request.email or ""
+    shipping_address = {
+        "name": request.shipping_name or "",
+        "address": request.shipping_address or "",
+        "city": request.shipping_city or "",
+        "state": request.shipping_state or "",
+        "pincode": request.shipping_pincode or "",
+        "country": "India",
+        "phone": request.phone or "",
+        "email": customer_email,
+    }
+
+    user_id: Optional[uuid.UUID] = None
+    if request.user_id:
+        try:
+            user_id = uuid.UUID(request.user_id)
+        except ValueError:
+            pass
+
+    order = Order(
+        payment_method="cod",
+        status="confirmed",
+        total_amount=total,
+        currency="inr",
+        customer_email=customer_email,
+        shipping_address=shipping_address,
+        user_id=user_id,
+    )
+    db.add(order)
+    db.flush()
+
+    items_data = []
+    for item in request.items:
+        db.add(OrderItem(
+            order_id=order.id,
+            product_sku=item.sku,
+            variant_key=item.variant_key,
+            product_name=item.product_name,
+            quantity=item.quantity,
+            unit_price=Decimal(str(item.unit_price)),
+        ))
+        items_data.append({
+            "sku": item.sku,
+            "name": item.product_name,
+            "quantity": item.quantity,
+            "price": float(item.unit_price),
+        })
+
+    # COD = cash not yet collected -> payment stays pending.
+    db.add(Payment(order_id=order.id, amount=total, status="pending"))
+    db.commit()
+    db.refresh(order)
+
+    asyncio.create_task(_post_order_tasks(order, items_data, db, cod=True))
 
     return order

@@ -16,6 +16,7 @@ class OrderItemOut(BaseModel):
 class OrderOut(BaseModel):
     id: uuid.UUID
     phonepe_order_id: Optional[str] = None
+    payment_method: str = "online"
     status: str
     total_amount: Decimal
     currency: str

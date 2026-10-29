@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     environment: str = "development"
 
+    # COD (Cash on Delivery) — 0 means no cap
+    cod_max_value: int = 0
+
     # JWT
     jwt_secret_key: str = "change-this-in-production"
     jwt_algorithm: str = "HS256"

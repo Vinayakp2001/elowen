@@ -15,6 +15,7 @@ interface OrderItem {
 interface Order {
   id: string
   phonepe_order_id?: string
+  payment_method?: string
   status: string
   total_amount: number
   currency: string
@@ -36,10 +37,17 @@ function formatPrice(amount: number, currency: string) {
   }).format(amount)
 }
 
-async function fetchOrderWithRetry(merchantOrderId: string, retries = 5, delayMs = 2000): Promise<Order> {
+async function fetchOrderWithRetry(
+  orderId: string,
+  isCod: boolean,
+  retries = 5,
+  delayMs = 2000
+): Promise<Order> {
+  // COD orders have no phonepe_order_id — look them up by internal UUID.
+  const path = isCod ? `/orders/${orderId}` : `/orders/by-phonepe-order/${orderId}`
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      return await api.get<Order>(`/orders/by-phonepe-order/${merchantOrderId}`)
+      return await api.get<Order>(path)
     } catch {
       if (attempt < retries - 1) {
         await new Promise((res) => setTimeout(res, delayMs))
@@ -52,6 +60,7 @@ async function fetchOrderWithRetry(merchantOrderId: string, retries = 5, delayMs
 export function CheckoutSuccessClient() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("order_id")
+  const isCod = searchParams.get("cod") === "1"
   const [order, setOrder] = useState<Order | null>(null)
   const [status, setStatus] = useState<SuccessStatus>("loading")
 
@@ -62,7 +71,7 @@ export function CheckoutSuccessClient() {
       return
     }
     setStatus("loading")
-    fetchOrderWithRetry(orderId)
+    fetchOrderWithRetry(orderId, isCod)
       .then((o) => {
         setOrder(o)
         setStatus("confirmed")
@@ -71,14 +80,16 @@ export function CheckoutSuccessClient() {
         setOrder(null)
         setStatus("not_completed")
       })
-  }, [orderId])
+  }, [orderId, isCod])
 
   return (
     <div className="pt-16 min-h-screen bg-[#FDFAF5]">
       <div className="max-w-[640px] mx-auto px-6 md:px-12 py-20">
         <div className="flex flex-col gap-8">
-          {status === "loading" && <LoadingState />}
-          {status === "confirmed" && order && <ConfirmedState order={order} />}
+          {status === "loading" && <LoadingState cod={isCod} />}
+          {status === "confirmed" && order && (
+            <ConfirmedState order={order} cod={isCod || order.payment_method === "cod"} />
+          )}
           {status === "not_completed" && <NotCompletedState />}
         </div>
       </div>
@@ -86,14 +97,14 @@ export function CheckoutSuccessClient() {
   )
 }
 
-function LoadingState() {
+function LoadingState({ cod = false }: { cod?: boolean }) {
   return (
     <div>
       <p className="font-sans text-[0.7rem] tracking-[0.12em] uppercase text-[#8C7B6B] mb-4">
-        Verifying Payment
+        {cod ? "Placing Order" : "Verifying Payment"}
       </p>
       <h1 className="font-serif text-[2rem] text-[#2C2C2C] mb-6">
-        Verifying your payment&hellip;
+        {cod ? "Placing your order\u2026" : "Verifying your payment\u2026"}
       </h1>
       <div className="space-y-3">
         <div className="h-5 bg-[#F5F0E8] animate-pulse w-1/2" />
@@ -141,7 +152,7 @@ function NotCompletedState() {
   )
 }
 
-function ConfirmedState({ order }: { order: Order }) {
+function ConfirmedState({ order, cod = false }: { order: Order; cod?: boolean }) {
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -151,15 +162,29 @@ function ConfirmedState({ order }: { order: Order }) {
           </svg>
         </div>
         <p className="font-sans text-[0.7rem] tracking-[0.12em] uppercase text-[#8C7B6B] mb-2">
-          Order Confirmed
+          {cod ? "Order Confirmed — Pay on Delivery" : "Order Confirmed"}
         </p>
         <h1 className="font-serif text-[2rem] text-[#2C2C2C]">Thank You</h1>
       </div>
 
       <div className="flex flex-col gap-6">
         <p className="font-sans text-[0.875rem] text-[#8C7B6B] leading-relaxed">
-          Your order has been confirmed and is being prepared. A confirmation email
-          will be sent to{" "}
+          {cod ? (
+            <>
+              Your Cash on Delivery order has been placed and is being prepared.
+              Please keep{" "}
+              <span className="text-[#2C2C2C]">
+                {formatPrice(order.total_amount, order.currency)}
+              </span>{" "}
+              ready to pay when your order arrives. A confirmation email will be
+              sent to{" "}
+            </>
+          ) : (
+            <>
+              Your order has been confirmed and is being prepared. A confirmation
+              email will be sent to{" "}
+            </>
+          )}
           {order.customer_email ? (
             <span className="text-[#2C2C2C]">{order.customer_email}</span>
           ) : (
@@ -198,7 +223,7 @@ function ConfirmedState({ order }: { order: Order }) {
 
           <div className="flex items-center justify-between pt-2 border-t border-[#E8D9C0]">
             <p className="font-sans text-[0.75rem] tracking-[0.08em] uppercase text-[#8C7B6B]">
-              Total
+              {cod ? "Pay on Delivery" : "Total"}
             </p>
             <p className="font-serif text-lg text-[#2C2C2C]">
               {formatPrice(order.total_amount, order.currency)}

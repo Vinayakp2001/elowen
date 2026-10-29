@@ -133,5 +133,13 @@ export const Products: CollectionConfig = {
       type: "checkbox",
       defaultValue: true,
     },
+    {
+      name: "codAvailable",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        description: "Allow Cash on Delivery for this product.",
+      },
+    },
   ],
 }
