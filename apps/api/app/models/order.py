@@ -11,7 +11,10 @@ class Order(SQLModel, table=True):
     __tablename__: str = "orders"
 
     id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="users.id")
+    # Stores the authenticated user's UUID when present. No DB-level foreign key:
+    # the `users` table is not owned by this FastAPI schema in production, and a
+    # hard FK broke synchronous order inserts ("could not find table 'users'").
+    user_id: Optional[uuid.UUID] = Field(default=None)
     # Legacy Stripe column — kept nullable so SQLModel matches the reconciled
     # production table and any legacy Stripe-era rows remain readable.
     stripe_session_id: Optional[str] = Field(default=None)
