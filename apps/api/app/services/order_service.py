@@ -10,10 +10,31 @@ from app.constants import SUCCESS_STATES
 import uuid
 from typing import Optional
 
+import threading
+
 logger = logging.getLogger(__name__)
 
 # A clean 10-digit Indian mobile (no +91, spaces, or leading zero).
 _INDIAN_MOBILE_RE = re.compile(r"^[6-9]\d{9}$")
+
+
+def _run_post_order_tasks(order_id: uuid.UUID, cod: bool = False) -> None:
+    """Fire the async `_post_order_tasks` from ANY context.
+
+    `promote_order_to_paid` / `create_cod_order` can run either inside the async
+    event loop (webhook path) or in a worker thread via `run_in_threadpool`
+    (the sync redirect-return verify path). `asyncio.create_task` only works
+    when a loop is already running, so in the threadpool case it raises
+    `RuntimeError: no running event loop`. To be safe everywhere, always run the
+    coroutine on its own loop in a daemon thread — fulfilment is fire-and-forget.
+    """
+    def _worker():
+        try:
+            asyncio.run(_post_order_tasks(order_id, cod=cod))
+        except Exception as e:
+            logger.error("[Fulfilment] post-order tasks failed for %s: %s", order_id, str(e))
+
+    threading.Thread(target=_worker, daemon=True).start()
 
 
 def _warn_if_bad_phone(phone: str, order_id) -> None:
@@ -103,7 +124,7 @@ def create_from_session(stripe_session: dict, db: Session) -> Order:
 
     # Trigger post-payment async tasks (Shiprocket + email)
     # Run in background — do not block webhook response
-    asyncio.create_task(_post_order_tasks(order.id, cod=False))
+    _run_post_order_tasks(order.id, cod=False)
 
     return order
 
@@ -390,7 +411,7 @@ def promote_order_to_paid(order: Order, status_response, db: Session) -> Order:
     db.refresh(order)
 
     # Fulfilment reads items/shipping from the DB (not webhook metadata).
-    asyncio.create_task(_post_order_tasks(order.id, cod=False))
+    _run_post_order_tasks(order.id, cod=False)
 
     return order
 
@@ -457,6 +478,6 @@ def create_cod_order(request, db: Session) -> Order:
     db.commit()
     db.refresh(order)
 
-    asyncio.create_task(_post_order_tasks(order.id, cod=True))
+    _run_post_order_tasks(order.id, cod=True)
 
     return order
