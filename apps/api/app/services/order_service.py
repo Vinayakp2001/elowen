@@ -1,14 +1,34 @@
 import asyncio
 import logging
 import os
+import re
 import sqlite3
 from decimal import Decimal
 from sqlmodel import Session, select
 from app.models.order import Order, OrderItem, Payment
+from app.constants import SUCCESS_STATES
 import uuid
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# A clean 10-digit Indian mobile (no +91, spaces, or leading zero).
+_INDIAN_MOBILE_RE = re.compile(r"^[6-9]\d{9}$")
+
+
+def _warn_if_bad_phone(phone: str, order_id) -> None:
+    """Log a warning when the shipping phone is not a clean 10-digit mobile.
+
+    Shiprocket rejects malformed phones with 422; we still attempt fulfilment
+    but surface the issue so it can be diagnosed.
+    """
+    cleaned = re.sub(r"\D", "", phone or "")
+    if not _INDIAN_MOBILE_RE.match(cleaned):
+        logger.warning(
+            "[Fulfilment] Order %s shipping phone %r is not a clean 10-digit "
+            "Indian mobile — Shiprocket may reject it (422).",
+            order_id, phone,
+        )
 
 PAYLOAD_DB_PATH = os.getenv(
     "PAYLOAD_DB_PATH",
@@ -83,25 +103,53 @@ def create_from_session(stripe_session: dict, db: Session) -> Order:
 
     # Trigger post-payment async tasks (Shiprocket + email)
     # Run in background — do not block webhook response
-    asyncio.create_task(_post_order_tasks(order, items_data, db, cod=False))
+    asyncio.create_task(_post_order_tasks(order.id, cod=False))
 
     return order
 
 
-async def _post_order_tasks(order: Order, items_data: list, db: Session, cod: bool = False):
+async def _post_order_tasks(order_id: uuid.UUID, cod: bool = False):
     """Async post-order: decrement inventory, create Shiprocket shipment, send confirmation email.
 
-    Shared by both the PhonePe (prepaid) and COD paths. When `cod` is True the
-    Shiprocket shipment is created in COD mode and the confirmation email uses
-    COD wording.
+    Shared by both the PhonePe (prepaid) and COD paths. Items and shipping are
+    read fresh from the persisted order (its `OrderItem` rows), never from
+    webhook/body metadata. When `cod` is True the Shiprocket shipment is created
+    in COD mode and the confirmation email uses COD wording.
     """
     from app.services.shiprocket_service import build_shiprocket_order, create_shipment, assign_awb
     from app.services.email_service import send_order_confirmation
+    from app.database import engine
+    from sqlmodel import Session as DBSession
 
-    shipping_address = order.shipping_address or {}
+    # Load the order and its items fresh from the DB (source of truth).
+    with DBSession(engine) as session:
+        order = session.get(Order, order_id)
+        if not order:
+            logger.error("[Fulfilment] Order %s not found for post-order tasks.", order_id)
+            return
+        order_items = session.exec(
+            select(OrderItem).where(OrderItem.order_id == order_id)
+        ).all()
+        # Detach the data we need before the session closes.
+        shipping_address = dict(order.shipping_address or {})
+        customer_email = order.customer_email
+        total_amount = order.total_amount
+        created_at = order.created_at
+        order_id_str = str(order.id)
+        items_for_email = [
+            {"name": i.product_name, "quantity": i.quantity, "price": float(i.unit_price)}
+            for i in order_items
+        ]
+        items_for_sr = [
+            _SRItem(i.product_name, i.product_sku, i.quantity, i.unit_price)
+            for i in order_items
+        ]
+        order_for_sr = _OrderSnapshot(order_id_str, created_at, customer_email, total_amount)
+
+    _warn_if_bad_phone(shipping_address.get("phone", ""), order_id)
 
     # 1. Decrement inventory for purchased SKUs
-    skus = [item["sku"] for item in items_data if item.get("sku")]
+    skus = [i.product_sku for i in items_for_sr if i.product_sku]
     if skus:
         _decrement_inventory(skus)
 
@@ -113,8 +161,8 @@ async def _post_order_tasks(order: Order, items_data: list, db: Session, cod: bo
 
     try:
         sr_payload = build_shiprocket_order(
-            order,
-            _get_order_items_for_sr(order, items_data),
+            order_for_sr,
+            items_for_sr,
             shipping_address,
             payment_method="COD" if cod else "Prepaid",
         )
@@ -122,7 +170,7 @@ async def _post_order_tasks(order: Order, items_data: list, db: Session, cod: bo
         shiprocket_order_id = str(sr_response.get("order_id", "")) or None
         shipment_id = str(sr_response.get("shipment_id", "")) or None
     except Exception as e:
-        logger.error("[Shiprocket] create_shipment failed for order %s: %s", order.id, str(e))
+        logger.error("[Shiprocket] create_shipment failed for order %s: %s", order_id, str(e))
 
     if shipment_id:
         try:
@@ -131,15 +179,15 @@ async def _post_order_tasks(order: Order, items_data: list, db: Session, cod: bo
             awb_code = awb_data.get("awb_code") or None
             courier_name = awb_data.get("courier_name") or None
         except Exception as e:
-            logger.error("[Shiprocket] assign_awb failed for order %s shipment %s: %s", order.id, shipment_id, str(e))
+            logger.error("[Shiprocket] assign_awb failed for order %s shipment %s: %s", order_id, shipment_id, str(e))
 
-    # Persist whatever we obtained (even partial — e.g. shipment_id without AWB)
+    # Persist whatever we obtained (even partial — e.g. shipment_id without AWB).
+    # If Shiprocket failed entirely the order stays paid/confirmed with null
+    # shipment fields (graceful partial-failure, no regression).
     if shiprocket_order_id or shipment_id or awb_code:
         try:
-            from app.database import engine
-            from sqlmodel import Session as DBSession
             with DBSession(engine) as session:
-                db_order = session.get(Order, order.id)
+                db_order = session.get(Order, order_id)
                 if db_order:
                     if shiprocket_order_id:
                         db_order.shiprocket_order_id = shiprocket_order_id
@@ -156,41 +204,41 @@ async def _post_order_tasks(order: Order, items_data: list, db: Session, cod: bo
                     session.add(db_order)
                     session.commit()
         except Exception as e:
-            logger.error("[Shiprocket] DB update failed for order %s: %s", order.id, str(e))
+            logger.error("[Shiprocket] DB update failed for order %s: %s", order_id, str(e))
 
     # 3. Send order confirmation email
-    if order.customer_email:
+    if customer_email:
         try:
             await send_order_confirmation(
-                to=order.customer_email,
-                order_id=str(order.id),
-                items=[
-                    {
-                        "name": item.get("name", item["sku"]),
-                        "quantity": item["quantity"],
-                        "price": float(item.get("price", 0)),
-                    }
-                    for item in items_data
-                ],
-                total=float(order.total_amount),
-                shipping_address=order.shipping_address or {},
+                to=customer_email,
+                order_id=order_id_str,
+                items=items_for_email,
+                total=float(total_amount),
+                shipping_address=shipping_address,
                 cod=cod,
             )
         except Exception as e:
-            logger.error("[Email] Failed to send confirmation for order %s: %s", order.id, str(e))
+            logger.error("[Email] Failed to send confirmation for order %s: %s", order_id, str(e))
 
 
-def _get_order_items_for_sr(order: Order, items_data: list):
-    """Returns a simple object list compatible with build_shiprocket_order."""
-    class _Item:
-        def __init__(self, d, fallback_price):
-            self.product_name = d.get("name", d["sku"])
-            self.product_sku = d["sku"]
-            self.quantity = d["quantity"]
-            self.unit_price = Decimal(str(d.get("price", fallback_price)))
+class _SRItem:
+    """Simple item object compatible with build_shiprocket_order."""
 
-    fallback = order.total_amount / max(len(items_data), 1)
-    return [_Item(d, fallback) for d in items_data]
+    def __init__(self, product_name: str, product_sku: str, quantity: int, unit_price):
+        self.product_name = product_name
+        self.product_sku = product_sku
+        self.quantity = quantity
+        self.unit_price = unit_price
+
+
+class _OrderSnapshot:
+    """Minimal order view for build_shiprocket_order, detached from the session."""
+
+    def __init__(self, order_id: str, created_at, customer_email, total_amount):
+        self.id = order_id
+        self.created_at = created_at
+        self.customer_email = customer_email
+        self.total_amount = total_amount
 
 
 def _parse_items_metadata(items_str: str, legacy_skus_str: str) -> list:
@@ -247,53 +295,43 @@ def _parse_shipping_address(stripe_session: dict, metadata: dict) -> dict:
     }
 
 
-def create_from_phonepe_callback(
-    merchant_order_id: str,
-    status_response,  # SDK status object (has .state, .payment_details, etc.)
-    metadata: dict,   # shipping/contact info stored during checkout
-    db: Session,
-) -> Order:
-    """Create Order, OrderItems, and Payment from a completed PhonePe webhook callback."""
-    status_dict = vars(status_response)
+def create_pending_online_order(request, merchant_order_id: str, db: Session) -> Order:
+    """Persist a `pending` online order (+ items + shipping) BEFORE the PhonePe
+    redirect, so a confirmed payment always maps to a complete order.
 
-    # Extract PhonePe's internal orderId and payment details
-    phonepe_internal_id: Optional[str] = status_dict.get("order_id")
-    payment_details = status_dict.get("payment_details") or []
-    phonepe_payment_id: Optional[str] = None
-    if payment_details:
-        try:
-            phonepe_payment_id = vars(payment_details[0]).get("transaction_id")
-        except Exception:
-            pass
+    Validates non-empty items and a positive total (the router guards these too).
+    No `Payment` row is created yet — that happens on payment confirmation.
+    """
+    if not request.items:
+        raise ValueError("Cart is empty.")
 
-    # Amount: PhonePe returns amount in paise
-    amount_paise = status_dict.get("amount", 0)
-    total = Decimal(str(amount_paise)) / 100
+    total = Decimal(str(sum(item.unit_price * item.quantity for item in request.items)))
+    if total <= 0:
+        raise ValueError("Invalid order total.")
 
-    customer_email = metadata.get("email", "")
+    customer_email = request.email or ""
     shipping_address = {
-        "name": metadata.get("shipping_name", ""),
-        "address": metadata.get("shipping_address", ""),
-        "city": metadata.get("shipping_city", ""),
-        "state": metadata.get("shipping_state", ""),
-        "pincode": metadata.get("shipping_pincode", ""),
+        "name": request.shipping_name or "",
+        "address": request.shipping_address or "",
+        "city": request.shipping_city or "",
+        "state": request.shipping_state or "",
+        "pincode": request.shipping_pincode or "",
         "country": "India",
-        "phone": metadata.get("phone", ""),
+        "phone": request.phone or "",
         "email": customer_email,
     }
 
-    items_data = _parse_items_metadata(metadata.get("items", ""), "")
     user_id: Optional[uuid.UUID] = None
-    if metadata.get("user_id"):
+    if request.user_id:
         try:
-            user_id = uuid.UUID(metadata["user_id"])
+            user_id = uuid.UUID(request.user_id)
         except ValueError:
             pass
 
     order = Order(
         phonepe_order_id=merchant_order_id,
-        phonepe_internal_id=phonepe_internal_id,
-        status="paid",
+        payment_method="online",
+        status="pending",
         total_amount=total,
         currency="inr",
         customer_email=customer_email,
@@ -303,26 +341,56 @@ def create_from_phonepe_callback(
     db.add(order)
     db.flush()
 
-    for item in items_data:
+    for item in request.items:
         db.add(OrderItem(
             order_id=order.id,
-            product_sku=item["sku"],
-            product_name=item.get("name", item["sku"]),
-            quantity=item["quantity"],
-            unit_price=Decimal(str(item.get("price", total / max(len(items_data), 1)))),
+            product_sku=item.sku,
+            variant_key=item.variant_key,
+            product_name=item.product_name,
+            quantity=item.quantity,
+            unit_price=Decimal(str(item.unit_price)),
         ))
 
-    payment = Payment(
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+def promote_order_to_paid(order: Order, status_response, db: Session) -> Order:
+    """Promote an existing `pending` online order to `paid` after the PhonePe
+    webhook confirms payment, store PhonePe's internal id + a succeeded Payment,
+    then schedule fulfilment from the order's already-stored items.
+    """
+    status_dict = vars(status_response)
+
+    phonepe_internal_id: Optional[str] = status_dict.get("order_id")
+    payment_details = status_dict.get("payment_details") or []
+    phonepe_payment_id: Optional[str] = None
+    if payment_details:
+        try:
+            phonepe_payment_id = vars(payment_details[0]).get("transaction_id")
+        except Exception:
+            pass
+
+    amount_paise = status_dict.get("amount", 0)
+    paid_total = Decimal(str(amount_paise)) / 100 if amount_paise else order.total_amount
+
+    order.status = "paid"
+    if phonepe_internal_id:
+        order.phonepe_internal_id = phonepe_internal_id
+    db.add(order)
+
+    db.add(Payment(
         order_id=order.id,
         phonepe_payment_id=phonepe_payment_id,
-        amount=total,
+        amount=paid_total,
         status="succeeded",
-    )
-    db.add(payment)
+    ))
     db.commit()
     db.refresh(order)
 
-    asyncio.create_task(_post_order_tasks(order, items_data, db, cod=False))
+    # Fulfilment reads items/shipping from the DB (not webhook metadata).
+    asyncio.create_task(_post_order_tasks(order.id, cod=False))
 
     return order
 
@@ -389,6 +457,6 @@ def create_cod_order(request, db: Session) -> Order:
     db.commit()
     db.refresh(order)
 
-    asyncio.create_task(_post_order_tasks(order, items_data, db, cod=True))
+    asyncio.create_task(_post_order_tasks(order.id, cod=True))
 
     return order

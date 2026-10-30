@@ -26,5 +26,7 @@ class OrderOut(BaseModel):
     shiprocket_shipment_id: Optional[str] = None
     awb_code: Optional[str] = None
     courier_name: Optional[str] = None
+    shipment_status: Optional[str] = None
+    shipment_status_at: Optional[datetime] = None
     items: List[OrderItemOut]
     created_at: datetime

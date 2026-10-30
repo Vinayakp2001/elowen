@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # COD (Cash on Delivery) — 0 means no cap
     cod_max_value: int = 0
 
+    # Shiprocket status webhook shared token and non-success order retention
+    shiprocket_webhook_token: str = ""
+    order_retention_days: int = 180
+
     # JWT
     jwt_secret_key: str = "change-this-in-production"
     jwt_algorithm: str = "HS256"

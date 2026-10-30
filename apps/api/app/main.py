@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.database import create_db_and_tables
 from app.config import settings
-from app.routers import health, cart, checkout, webhooks, orders, newsletter, wishlist, auth
+from app.routers import health, cart, checkout, webhooks, orders, newsletter, wishlist, auth, admin
 
 
 @asynccontextmanager
@@ -31,3 +31,4 @@ app.include_router(webhooks.router)
 app.include_router(orders.router)
 app.include_router(newsletter.router)
 app.include_router(wishlist.router)
+app.include_router(admin.router)

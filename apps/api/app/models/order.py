@@ -19,7 +19,7 @@ class Order(SQLModel, table=True):
     phonepe_order_id: Optional[str] = Field(default=None, unique=True, index=True)
     # PhonePe's internal orderId (OMO...)
     phonepe_internal_id: Optional[str] = Field(default=None)
-    status: str = Field(default="pending")  # pending | paid | confirmed | processing | shipped | delivered | cancelled
+    status: str = Field(default="pending")  # pending | payment_failed | abandoned | paid | confirmed | processing | shipped | delivered | cancelled
     payment_method: str = Field(default="online")  # online | cod
     customer_email: Optional[str] = Field(default=None, index=True)
     total_amount: Decimal = Field(decimal_places=2, max_digits=10)
@@ -29,6 +29,9 @@ class Order(SQLModel, table=True):
     shiprocket_shipment_id: Optional[str] = Field(default=None)
     awb_code: Optional[str] = Field(default=None)
     courier_name: Optional[str] = Field(default=None)
+    # Latest raw Shiprocket status text and when it was received (status webhook)
+    shipment_status: Optional[str] = Field(default=None)
+    shipment_status_at: Optional[datetime] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

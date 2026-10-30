@@ -36,10 +36,17 @@ def _generate_merchant_order_id() -> str:
     return "ELW" + uuid.uuid4().hex[:20].upper()
 
 
-async def initiate_payment(request: CheckoutSessionRequest) -> PhonePePaymentResponse:
-    """Create a PhonePe payment order and return the redirect URL."""
+async def initiate_payment(
+    request: CheckoutSessionRequest,
+    merchant_order_id: str,
+) -> PhonePePaymentResponse:
+    """Create a PhonePe payment order and return the redirect URL.
+
+    The caller supplies `merchant_order_id` (generated via
+    `_generate_merchant_order_id`) so the persisted pending order and the
+    PhonePe request share the same id.
+    """
     client = _get_client()
-    merchant_order_id = _generate_merchant_order_id()
 
     # Embed our merchantOrderId in the redirect URL — PhonePe does NOT append it automatically
     redirect_url = f"https://elowen.co.in/checkout/success?order_id={merchant_order_id}"

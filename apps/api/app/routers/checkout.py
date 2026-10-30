@@ -14,9 +14,31 @@ router = APIRouter(prefix="/checkout", tags=["checkout"])
 
 
 @router.post("/session", response_model=PhonePePaymentResponse)
-async def create_session(request: CheckoutSessionRequest):
+async def create_session(request: CheckoutSessionRequest, db: Session = Depends(get_session)):
+    """Persist a `pending` order (items + shipping), THEN initiate PhonePe.
+
+    The pending order and the PhonePe request share the same merchantOrderId so
+    the webhook can later promote exactly this order to `paid`.
+    """
+    # Reject empty cart / non-positive total before touching the DB or PhonePe.
+    if not request.items:
+        raise HTTPException(status_code=400, detail="Cart is empty.")
+
+    total = sum(item.unit_price * item.quantity for item in request.items)
+    if total <= 0:
+        raise HTTPException(status_code=400, detail="Invalid order total.")
+
+    merchant_order_id = phonepe_service._generate_merchant_order_id()
+
+    # 1. Persist the pending order first. On failure, do NOT call PhonePe.
     try:
-        return await phonepe_service.initiate_payment(request)
+        order_service.create_pending_online_order(request, merchant_order_id, db)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Could not create order: {str(e)}")
+
+    # 2. Initiate payment using the SAME merchantOrderId.
+    try:
+        return await phonepe_service.initiate_payment(request, merchant_order_id)
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Payment initiation failed: {str(e)}")
 

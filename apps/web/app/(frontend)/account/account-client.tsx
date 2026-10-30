@@ -23,6 +23,8 @@ interface Order {
   items: OrderItem[]
   awb_code?: string
   courier_name?: string
+  shipment_status?: string | null
+  shipment_status_at?: string | null
   shipping_address?: Record<string, string>
 }
 
@@ -224,6 +226,20 @@ export default function AccountClient() {
                           </div>
                         ))}
 
+                        {(order.status === "delivered" || order.status === "cancelled") && (
+                          <div className="mt-2 pt-4 border-t border-[#E8D9C0]">
+                            <p
+                              className={`font-sans text-[0.8rem] ${
+                                order.status === "delivered" ? "text-[#2C7A4B]" : "text-red-500"
+                              }`}
+                            >
+                              {order.status === "delivered"
+                                ? "This order has been delivered."
+                                : "This order was cancelled."}
+                            </p>
+                          </div>
+                        )}
+
                         {order.awb_code && (
                           <div className="mt-2 pt-4 border-t border-[#E8D9C0]">
                             <p className="font-sans text-[0.7rem] tracking-[0.08em] uppercase text-[#8C7B6B] mb-1">
@@ -232,6 +248,11 @@ export default function AccountClient() {
                             <p className="font-sans text-[0.8rem] text-[#2C2C2C]">
                               {order.courier_name} &mdash; {order.awb_code}
                             </p>
+                            {order.shipment_status && (
+                              <p className="mt-1 font-sans text-[0.75rem] text-[#8C7B6B]">
+                                Latest: {order.shipment_status}
+                              </p>
+                            )}
                             <button
                               onClick={() => fetchTracking(order.id)}
                               disabled={trackingStates[order.id]?.loading}

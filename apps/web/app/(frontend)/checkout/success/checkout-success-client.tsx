@@ -23,6 +23,8 @@ interface Order {
   shipping_address?: Record<string, string>
   awb_code?: string
   courier_name?: string
+  shipment_status?: string | null
+  shipment_status_at?: string | null
   items: OrderItem[]
   created_at: string
 }
@@ -248,8 +250,19 @@ function ConfirmedState({ order, cod = false }: { order: Order; cod?: boolean })
             <p className="font-sans text-[0.7rem] tracking-[0.1em] uppercase text-[#8C7B6B] mb-2">
               Dispatch Status
             </p>
-            {order.awb_code ? (
+            {order.status === "delivered" ? (
+              <p className="font-sans text-[0.8rem] text-[#2C7A4B]">
+                Delivered.
+              </p>
+            ) : order.status === "cancelled" ? (
+              <p className="font-sans text-[0.8rem] text-[#C25B4E]">
+                This order was cancelled.
+              </p>
+            ) : order.awb_code ? (
               <p className="font-sans text-[0.8rem] text-[#2C2C2C]">
+                {order.shipment_status
+                  ? `${order.shipment_status} — `
+                  : ""}
                 {order.courier_name} &mdash; {order.awb_code}
                 {" "}
                 <Link href="/account" className="text-[#B8975A] hover:underline">
