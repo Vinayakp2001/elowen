@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "npm run generate:importmap && next dev",
     "devsafe": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}\" && npm run dev",
-    "build": "npm run generate:importmap && next build",
+    "build": "npm run generate:importmap && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "seed": "payload run src/seed/index.ts",
