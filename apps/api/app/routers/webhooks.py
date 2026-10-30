@@ -90,9 +90,14 @@ async def phonepe_webhook(request: Request, db: Session = Depends(get_session)):
 
 
 @router.post("/shiprocket")
+@router.post("/courier-status")
 async def shiprocket_webhook(request: Request, db: Session = Depends(get_session)):
     """
     Shiprocket shipment-status webhook.
+
+    Registered under two paths: `/courier-status` (use this in the Shiprocket
+    dashboard — it rejects URLs containing the word "shiprocket") and the
+    legacy `/shiprocket`.
 
     Verifies a shared token, finds the order by AWB (then shiprocket_order_id),
     maps the Shiprocket status to our internal status, and applies it only as a
