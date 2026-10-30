@@ -249,6 +249,10 @@ export interface Product {
   isNew?: boolean | null;
   isFeatured?: boolean | null;
   inStock?: boolean | null;
+  /**
+   * Allow Cash on Delivery for this product.
+   */
+  codAvailable?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -308,6 +312,9 @@ export interface Policy {
   id: number;
   title: string;
   slug: string;
+  /**
+   * Optional single rich-text body. Use this OR the Sections below. Sections take priority if both are filled.
+   */
   body?: {
     root: {
       type: string;
@@ -323,6 +330,30 @@ export interface Policy {
     };
     [k: string]: unknown;
   } | null;
+  /**
+   * Structured sections (heading + rich text). Matches the default policy page layout. If empty, the single Body field above is used.
+   */
+  sections?:
+    | {
+        heading: string;
+        body: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -491,6 +522,7 @@ export interface ProductsSelect<T extends boolean = true> {
   isNew?: T;
   isFeatured?: T;
   inStock?: T;
+  codAvailable?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -526,6 +558,13 @@ export interface PoliciesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   body?: T;
+  sections?:
+    | T
+    | {
+        heading?: T;
+        body?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -598,6 +637,9 @@ export interface HomepageSetting {
     subline?: string | null;
     ctaLabel?: string | null;
     ctaHref?: string | null;
+    /**
+     * Recommended: at least 2400×1600px, landscape ~3:2 aspect ratio. After uploading, open the image and drag the FOCAL POINT (crosshair) onto the main subject (e.g. the face/jewelry) — the hero crops around that point, so it stays in frame on both mobile and desktop. Keep the file size small, as the hero image is served unoptimized and large files slow the homepage.
+     */
     image?: (number | null) | Media;
   };
   featuredCategories?: (number | Category)[] | null;

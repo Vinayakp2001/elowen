@@ -21,9 +21,11 @@ export const HomepageSettings: GlobalConfig = {
           admin: {
             description:
               "Recommended: at least 2400×1600px, landscape ~3:2 aspect ratio. " +
-              "Keep the main subject in the center — mobile crops to center, so " +
-              "edge subjects get cut off. Keep the file size small, as the hero " +
-              "image is served unoptimized and large files slow the homepage.",
+              "After uploading, open the image and drag the FOCAL POINT (crosshair) " +
+              "onto the main subject (e.g. the face/jewelry) — the hero crops around " +
+              "that point, so it stays in frame on both mobile and desktop. " +
+              "Keep the file size small, as the hero image is served unoptimized " +
+              "and large files slow the homepage.",
           },
         },
         {

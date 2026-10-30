@@ -8,6 +8,9 @@ import { getImageUrl } from "./image"
 interface ImageShape {
   url: string
   alt?: string
+  /** Focal point as percentages (0–100), set by the CMS user. */
+  focalX?: number
+  focalY?: number
 }
 
 // ---------------------------------------------------------------------------
@@ -17,7 +20,12 @@ interface ImageShape {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function transformImage(img: any): ImageShape | undefined {
   if (!img) return undefined
-  return { url: getImageUrl(img), alt: img.alt ?? undefined }
+  return {
+    url: getImageUrl(img),
+    alt: img.alt ?? undefined,
+    focalX: typeof img.focalX === "number" ? img.focalX : undefined,
+    focalY: typeof img.focalY === "number" ? img.focalY : undefined,
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

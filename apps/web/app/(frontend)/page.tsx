@@ -78,6 +78,8 @@ export default async function HomePage() {
         ctaHref={hero?.ctaHref ?? "/collections"}
         imageUrl={hero?.image?.url || "/hero-editorial.jpg"}
         imageAlt={hero?.headline ?? "Woman wearing ornate gold and gemstone drop earrings — Elowen Fine Jewelry"}
+        focalX={hero?.image?.focalX}
+        focalY={hero?.image?.focalY}
       />
 
       {/* Featured Categories */}

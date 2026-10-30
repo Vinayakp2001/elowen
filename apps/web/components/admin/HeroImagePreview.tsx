@@ -7,17 +7,19 @@ type Mode = "desktop" | "mobile"
 
 /**
  * Admin-only, display-only preview of how the homepage hero image will be
- * cropped on Desktop vs Mobile. It mirrors the live crop rules used in
- * `components/content/hero-section.tsx`:
- *   object-cover + (desktop) object-left-top / (mobile) object-center
+ * cropped on Desktop vs Mobile. It mirrors the live crop rule used in
+ * `components/content/hero-section.tsx`: object-cover with object-position
+ * driven by the media's focal point (fallback 50% 35%).
  *
  * It reads the currently-selected `hero.image` media id from live form state
- * (updates before save), resolves it to a URL via Payload REST, and renders it
- * inside a Desktop and a Mobile frame. It never writes any field or the DB.
+ * (updates before save), resolves it to a URL + focal point via Payload REST,
+ * and renders it inside a Desktop and a Mobile frame. It never writes any field
+ * or the DB.
  */
 export function HeroImagePreview() {
   const [mode, setMode] = useState<Mode>("desktop")
   const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [focal, setFocal] = useState<{ x: number; y: number } | null>(null)
   const [fetchFailed, setFetchFailed] = useState(false)
 
   // Subscribe to the live value of hero.image (the media document id).
@@ -31,6 +33,7 @@ export function HeroImagePreview() {
 
     if (mediaId === undefined || mediaId === null || mediaId === "") {
       setImageUrl(null)
+      setFocal(null)
       setFetchFailed(false)
       return
     }
@@ -44,10 +47,16 @@ export function HeroImagePreview() {
       .then((doc) => {
         if (cancelled) return
         setImageUrl(typeof doc?.url === "string" ? doc.url : null)
+        setFocal(
+          typeof doc?.focalX === "number" && typeof doc?.focalY === "number"
+            ? { x: doc.focalX, y: doc.focalY }
+            : null,
+        )
       })
       .catch(() => {
         if (cancelled) return
         setImageUrl(null)
+        setFocal(null)
         setFetchFailed(true)
       })
 
@@ -116,7 +125,7 @@ export function HeroImagePreview() {
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              objectPosition: isDesktop ? "left top" : "center",
+              objectPosition: focal ? `${focal.x}% ${focal.y}%` : "50% 35%",
             }}
           />
         ) : (
@@ -145,7 +154,8 @@ export function HeroImagePreview() {
           marginTop: "8px",
         }}
       >
-        Tip: keep the main subject centered — mobile crops to the center, so anything near the edges may be cut off.
+        Tip: drag the image&apos;s focal point (crosshair) onto the main subject. Both frames above crop around that
+        point, so it stays in view on mobile and desktop. No focal point set = centered slightly high (50% 35%).
       </p>
     </div>
   )

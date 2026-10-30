@@ -8,6 +8,9 @@ interface HeroSectionProps {
   ctaHref: string
   imageUrl: string
   imageAlt?: string
+  /** Focal point (0–100) set by the CMS user; keeps the subject in frame when cropped. */
+  focalX?: number
+  focalY?: number
 }
 
 export function HeroSection({
@@ -17,7 +20,16 @@ export function HeroSection({
   ctaHref,
   imageUrl,
   imageAlt = "",
+  focalX,
+  focalY,
 }: HeroSectionProps) {
+  // Honor the CMS focal point so any future upload crops around its subject.
+  // Fallback keeps the subject slightly above center (good default for portraits).
+  const objectPosition =
+    typeof focalX === "number" && typeof focalY === "number"
+      ? `${focalX}% ${focalY}%`
+      : "50% 35%"
+
   return (
     <section className="relative w-full h-screen min-h-[600px] max-h-[900px] overflow-hidden">
       {/* Background image */}
@@ -28,7 +40,8 @@ export function HeroSection({
           fill
           priority
           unoptimized
-          className="object-cover object-center md:object-left-top"
+          className="object-cover"
+          style={{ objectPosition }}
           sizes="100vw"
         />
       )}
