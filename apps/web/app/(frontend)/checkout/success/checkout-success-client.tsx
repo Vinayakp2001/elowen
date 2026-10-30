@@ -39,6 +39,16 @@ function formatPrice(amount: number, currency: string) {
   }).format(amount)
 }
 
+// Order statuses that represent a real, confirmed (fulfilment-bound) order.
+// Mirrors SUCCESS_STATES in apps/api/app/constants.py.
+const CONFIRMED_STATUSES = new Set([
+  "paid",
+  "confirmed",
+  "processing",
+  "shipped",
+  "delivered",
+])
+
 async function fetchOrderWithRetry(
   orderId: string,
   isCod: boolean,
@@ -46,16 +56,28 @@ async function fetchOrderWithRetry(
   delayMs = 2000
 ): Promise<Order> {
   // COD orders have no phonepe_order_id — look them up by internal UUID.
+  // The online path verifies payment with PhonePe server-side on each read, so
+  // retrying gives a still-"pending" order time to flip to "paid".
   const path = isCod ? `/orders/${orderId}` : `/orders/by-phonepe-order/${orderId}`
+  let lastOrder: Order | null = null
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      return await api.get<Order>(path)
-    } catch {
-      if (attempt < retries - 1) {
-        await new Promise((res) => setTimeout(res, delayMs))
+      const o = await api.get<Order>(path)
+      lastOrder = o
+      // COD is confirmed on creation; online must reach a confirmed status.
+      if (isCod || CONFIRMED_STATUSES.has(o.status)) {
+        return o
       }
+    } catch {
+      // fall through to retry
+    }
+    if (attempt < retries - 1) {
+      await new Promise((res) => setTimeout(res, delayMs))
     }
   }
+  // Found an order but it never reached a confirmed status (cancelled/failed/
+  // still pending) — surface it so the UI can show "not completed".
+  if (lastOrder) return lastOrder
   throw new Error("Order not found")
 }
 
@@ -76,7 +98,9 @@ export function CheckoutSuccessClient() {
     fetchOrderWithRetry(orderId, isCod)
       .then((o) => {
         setOrder(o)
-        setStatus("confirmed")
+        // Only a truly confirmed order shows "Thank You". A found-but-unconfirmed
+        // order (cancelled/failed/still-pending) shows "Payment Not Completed".
+        setStatus(isCod || CONFIRMED_STATUSES.has(o.status) ? "confirmed" : "not_completed")
       })
       .catch(() => {
         setOrder(null)

@@ -6,9 +6,12 @@ from app.dependencies import get_current_user, get_optional_user
 from app.models.order import Order, OrderItem
 from app.models.user import User
 from app.schemas.order import OrderOut, OrderItemOut
-from app.constants import NON_SUCCESS_STATES
+from app.constants import NON_SUCCESS_STATES, SUCCESS_STATES
 import httpx
+import logging
 import uuid
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -26,12 +29,60 @@ def _maybe_expire_pending(order: Order, db: Session) -> None:
         db.refresh(order)
 
 
+def _verify_and_promote_pending(order: Order, db: Session) -> Order:
+    """On the redirect-return lookup, confirm payment with PhonePe and promote.
+
+    PhonePe is NOT configured with an S2S callback, so the redirect-return is the
+    primary confirmation path. If the order is still `pending`, ask PhonePe for
+    the real payment state: COMPLETED -> promote to paid (fires Shiprocket +
+    email via the existing path); a terminal non-COMPLETED state -> payment_failed.
+    Pending-but-not-yet-final (still processing) is left untouched. Network/SDK
+    failures leave the order pending for a later retry — never falsely confirm.
+
+    `abandoned` is included because our lazy pending-expiry can fire while a real
+    payment actually completed — PhonePe is the source of truth, so a COMPLETED
+    state still promotes even after local expiry.
+    """
+    if order.status not in ("pending", "abandoned") or not order.phonepe_order_id:
+        return order
+
+    from app.services import phonepe_service
+    from app.services.order_service import promote_order_to_paid
+
+    try:
+        status = phonepe_service.get_order_status(order.phonepe_order_id)
+    except Exception as e:
+        logger.error("[Verify] PhonePe status lookup failed for %s: %s",
+                     order.phonepe_order_id, str(e))
+        return order
+
+    state = getattr(status, "state", None) or vars(status).get("state")
+
+    if state == "COMPLETED":
+        promote_order_to_paid(order, status, db)
+        db.refresh(order)
+    elif state in ("FAILED", "CANCELLED", "EXPIRED", "DECLINED"):
+        order.status = "payment_failed"
+        db.add(order)
+        db.commit()
+        db.refresh(order)
+    else:
+        logger.info("[Verify] PhonePe order %s state=%s — leaving pending.",
+                    order.phonepe_order_id, state)
+    return order
+
+
 @router.get("/by-phonepe-order/{merchant_order_id}", response_model=OrderOut)
 def get_order_by_phonepe_order(merchant_order_id: str, db: Session = Depends(get_session)):
-    """Used on the checkout success page — no auth required (merchantOrderId is unguessable)."""
+    """Used on the checkout success page — no auth required (merchantOrderId is unguessable).
+
+    Verifies the payment with PhonePe and promotes a confirmed pending order
+    (the redirect-return is our primary confirmation path).
+    """
     order = db.exec(select(Order).where(Order.phonepe_order_id == merchant_order_id)).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found.")
+    order = _verify_and_promote_pending(order, db)
     _maybe_expire_pending(order, db)
     return _build_order_out(order, db)
 
