@@ -98,8 +98,15 @@ async def shiprocket_webhook(request: Request, db: Session = Depends(get_session
     maps the Shiprocket status to our internal status, and applies it only as a
     forward transition. Unknown AWB → log + 200. Idempotent.
     """
-    # Token verification (query param `token` or `X-Webhook-Token` header).
-    provided = request.query_params.get("token") or request.headers.get("x-webhook-token", "")
+    # Token verification. Shiprocket sends the token in an HTTP header whose
+    # name is chosen in the dashboard ("Auth Token Type", e.g. x-api-key). We
+    # also accept a `?token=` query param and the generic x-webhook-token header.
+    provided = (
+        request.query_params.get("token")
+        or request.headers.get("x-api-key")
+        or request.headers.get("x-webhook-token")
+        or ""
+    )
     if not settings.shiprocket_webhook_token or provided != settings.shiprocket_webhook_token:
         raise HTTPException(status_code=401, detail="Unauthorized.")
 
