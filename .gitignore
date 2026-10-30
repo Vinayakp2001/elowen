@@ -27,7 +27,8 @@ env-fixed.env
 *.env.deploy
 
 # Throwaway debug/test scripts (must never be committed — see security-audit spec)
-/test_phonepe_*.py
+# No underscore after "phonepe" so it matches both test_phonepe.py and test_phonepe_*.py
+/test_phonepe*.py
 
 # Payload CMS
 apps/web/payload.db
