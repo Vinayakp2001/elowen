@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     shiprocket_email: str = ""
     shiprocket_password: str = ""
     shiprocket_base_url: str = "https://apiv2.shiprocket.in/v1/external"
+    # Pickup location name as configured in the Shiprocket dashboard
+    # (Settings -> Pickup Addresses). Must match exactly or order creation fails.
+    shiprocket_pickup_location: str = "work"
 
     # Email (stubbed until enabled)
     email_enabled: bool = False

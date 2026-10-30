@@ -204,7 +204,10 @@ def build_shiprocket_order(
     return {
         "order_id": str(order.id),
         "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
-        "pickup_location": "Primary",  # Must match warehouse name in Shiprocket dashboard
+        # Must match a pickup location name configured in the Shiprocket dashboard
+        # (Settings -> Pickup Addresses). Configurable via SHIPROCKET_PICKUP_LOCATION;
+        # defaults to "work" which is the account's configured location.
+        "pickup_location": settings.shiprocket_pickup_location,
         "billing_customer_name": name,
         "billing_last_name": "",
         "billing_address": address,
