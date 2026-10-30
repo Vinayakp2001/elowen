@@ -98,7 +98,7 @@ export function CollectionGrid({ products, categories = [] }: CollectionGridProp
         onTabChange={(tab) => { setActiveTab(tab); setVisibleCount(PAGE_SIZE) }}
       />
 
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12 py-10">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-12 pt-6 pb-12">
         {visible.length === 0 ? (
           <div className="py-20 text-center">
             <p className="font-serif text-lg text-[#8C7B6B]">No pieces found.</p>

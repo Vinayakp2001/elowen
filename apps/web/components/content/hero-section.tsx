@@ -28,7 +28,7 @@ export function HeroSection({
           fill
           priority
           unoptimized
-          className="object-cover object-left-top"
+          className="object-cover object-center md:object-left-top"
           sizes="100vw"
         />
       )}
