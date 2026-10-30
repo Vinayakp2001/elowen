@@ -65,17 +65,19 @@ async def validate_cart(items: List[CartItemInput]) -> CartValidateResponse:
         product = _get_product_by_sku(item.sku)
 
         if product is None:
-            # Product not found in Payload — treat as unavailable
-            logger.warning("[CartService] SKU not found: %s", item.sku)
+            # Stock source unavailable (e.g. the legacy Payload SQLite file does
+            # not exist in the Postgres-based production deploy). Fail OPEN: trust
+            # the client-supplied data and let the frontend `inStock` gate decide,
+            # rather than falsely marking every item out of stock.
+            logger.info("[CartService] SKU %s not resolvable from stock source — treating as available.", item.sku)
             results.append(
                 CartItemResult(
                     sku=item.sku,
-                    available=False,
+                    available=True,
                     current_price=item.unit_price,
                     price_changed=False,
                 )
             )
-            all_valid = False
             continue
 
         available = product["in_stock"]
