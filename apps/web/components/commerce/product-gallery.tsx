@@ -82,17 +82,21 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
           className="w-full h-full object-contain"
         />
         {validImages.length > 1 && (
-          <div className="flex justify-center gap-1.5 absolute bottom-3 left-0 right-0">
+          <div className="flex justify-center absolute bottom-1 left-0 right-0">
             {validImages.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setActiveIndex(i)}
                 aria-label={`Go to image ${i + 1}`}
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-colors duration-200",
-                  activeIndex === i ? "bg-[#2C2C2C]" : "bg-[#C9B99A]"
-                )}
-              />
+                className="flex items-center justify-center w-11 h-11"
+              >
+                <span
+                  className={cn(
+                    "block w-1.5 h-1.5 rounded-full transition-colors duration-200",
+                    activeIndex === i ? "bg-[#2C2C2C]" : "bg-[#C9B99A]"
+                  )}
+                />
+              </button>
             ))}
           </div>
         )}

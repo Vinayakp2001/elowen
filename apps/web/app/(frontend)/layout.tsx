@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Cormorant_Garamond, DM_Sans } from "next/font/google"
 import "./globals.css"
 import { SiteHeader } from "@/components/layout/site-header"
@@ -6,6 +6,11 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { CartDrawer } from "@/components/navigation/cart-drawer"
 
 export const revalidate = 60
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+}
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-serif",

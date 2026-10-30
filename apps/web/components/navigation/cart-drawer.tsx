@@ -110,7 +110,7 @@ export function CartDrawer() {
                           updateQuantity(item.sku, item.variantKey, item.quantity - 1)
                         }
                         aria-label="Decrease quantity"
-                        className="text-[#8C7B6B] hover:text-[#2C2C2C] transition-colors duration-200"
+                        className="p-2.5 -m-2.5 text-[#8C7B6B] hover:text-[#2C2C2C] transition-colors duration-200"
                       >
                         <Minus className="w-3 h-3" strokeWidth={1.5} />
                       </button>
@@ -122,7 +122,7 @@ export function CartDrawer() {
                           updateQuantity(item.sku, item.variantKey, item.quantity + 1)
                         }
                         aria-label="Increase quantity"
-                        className="text-[#8C7B6B] hover:text-[#2C2C2C] transition-colors duration-200"
+                        className="p-2.5 -m-2.5 text-[#8C7B6B] hover:text-[#2C2C2C] transition-colors duration-200"
                       >
                         <Plus className="w-3 h-3" strokeWidth={1.5} />
                       </button>
@@ -133,7 +133,7 @@ export function CartDrawer() {
                   <button
                     onClick={() => removeItem(item.sku, item.variantKey)}
                     aria-label={`Remove ${item.productTitle}`}
-                    className="text-[#C9B99A] hover:text-[#2C2C2C] transition-colors duration-200 self-start mt-1"
+                    className="p-2.5 -m-2.5 text-[#C9B99A] hover:text-[#2C2C2C] transition-colors duration-200 self-start mt-1"
                   >
                     <X className="w-3.5 h-3.5" strokeWidth={1.5} />
                   </button>

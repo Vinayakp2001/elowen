@@ -75,7 +75,7 @@ export function SiteHeader({ collectionLinks }: SiteHeaderProps) {
             <button
               aria-label="Search"
               onClick={() => setSearchOpen(true)}
-              className="text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
+              className="p-2.5 -m-2.5 text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
             >
               <Search className="w-4 h-4" strokeWidth={1.5} />
             </button>
@@ -83,7 +83,7 @@ export function SiteHeader({ collectionLinks }: SiteHeaderProps) {
             <Link
               href="/account"
               aria-label="Account"
-              className="hidden md:block text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
+              className="hidden md:block p-2.5 -m-2.5 text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
             >
               <User className="w-4 h-4" strokeWidth={1.5} />
             </Link>
@@ -91,32 +91,36 @@ export function SiteHeader({ collectionLinks }: SiteHeaderProps) {
             <Link
               href="/wishlist"
               aria-label={`Wishlist (${wishlistCount} items)`}
-              className="relative text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
+              className="relative p-2.5 -m-2.5 text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
             >
-              <Heart className="w-4 h-4" strokeWidth={1.5} />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-[#B8975A] text-[#FDFAF5] text-[0.55rem] rounded-full flex items-center justify-center">
-                  {wishlistCount}
-                </span>
-              )}
+              <span className="relative block">
+                <Heart className="w-4 h-4" strokeWidth={1.5} />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-[#B8975A] text-[#FDFAF5] text-[0.55rem] rounded-full flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
+              </span>
             </Link>
 
             <button
               onClick={openCart}
               aria-label={`Cart (${itemCount()} items)`}
-              className="relative text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
+              className="relative p-2.5 -m-2.5 text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
             >
-              <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
-              {itemCount() > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-[#B8975A] text-[#FDFAF5] text-[0.55rem] rounded-full flex items-center justify-center">
-                  {itemCount()}
-                </span>
-              )}
+              <span className="relative block">
+                <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
+                {itemCount() > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-[#B8975A] text-[#FDFAF5] text-[0.55rem] rounded-full flex items-center justify-center">
+                    {itemCount()}
+                  </span>
+                )}
+              </span>
             </button>
 
             {/* Mobile hamburger */}
             <button
-              className="lg:hidden text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
+              className="lg:hidden p-2.5 -m-2.5 text-[#2C2C2C] hover:text-[#B8975A] transition-colors duration-200"
               aria-label="Open menu"
               onClick={() => setMobileOpen(true)}
             >

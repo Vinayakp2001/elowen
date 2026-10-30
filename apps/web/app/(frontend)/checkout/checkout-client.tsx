@@ -385,7 +385,7 @@ export default function CheckoutClient() {
               <div className="mt-6 space-y-3 pt-5 border-t border-[#E8D9C0]">
                 {/* Coupon */}
                 <div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
                       label="Coupon Code"
                       type="text"
@@ -398,7 +398,7 @@ export default function CheckoutClient() {
                       variant="secondary"
                       onClick={applyCoupon}
                       disabled={!couponCode.trim()}
-                      className="mt-7 px-5"
+                      className="sm:mt-7 px-5"
                     >
                       Apply
                     </Button>

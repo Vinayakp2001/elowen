@@ -31,6 +31,10 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Safety net against accidental horizontal scroll on mobile.
+     Fixed/overlay UI (drawers, sticky bar) is positioned via `fixed`
+     and is unaffected by body overflow clipping. */
+  overflow-x: hidden;
 }
 
 /* ─── Reduced Motion ────────────────────────────────────────────────────────── */

@@ -2,7 +2,6 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useState } from "react"
 import { Heart } from "lucide-react"
 import { useWishlistStore } from "@/lib/store/wishlist"
 import { cn, formatPrice } from "@/lib/utils"
@@ -32,7 +31,6 @@ export function ProductCard({
   inStock = true,
   category,
 }: ProductCardProps) {
-  const [hovered, setHovered] = useState(false)
   const { toggle, has } = useWishlistStore()
   const wishlisted = has(sku)
 
@@ -45,35 +43,30 @@ export function ProductCard({
       <Link
         href={`/products/${slug.current}`}
         className="relative block overflow-hidden bg-[#F5F0E8]"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         aria-label={title}
       >
         <div className="relative aspect-square">
-          {/* Primary image */}
+          {/* Primary image — always visible; only fades on hover-capable devices when a secondary exists */}
           {primaryImage && (
             <Image
               src={primaryImage}
               alt={images[0].alt ?? title}
               fill
               className={cn(
-                "object-cover object-center transition-opacity duration-300",
-                hovered && secondaryImage ? "opacity-0" : "opacity-100"
+                "object-cover object-center transition-opacity duration-300 opacity-100",
+                secondaryImage && "[@media(hover:hover)]:group-hover:opacity-0"
               )}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             />
           )}
 
-          {/* Secondary image — hover swap */}
+          {/* Secondary image — hover swap, only on hover-capable devices */}
           {secondaryImage && (
             <Image
               src={secondaryImage}
               alt={images[1].alt ?? title}
               fill
-              className={cn(
-                "object-cover object-center transition-opacity duration-300 absolute inset-0",
-                hovered ? "opacity-100" : "opacity-0"
-              )}
+              className="object-cover object-center transition-opacity duration-300 absolute inset-0 opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             />
           )}
@@ -101,7 +94,7 @@ export function ProductCard({
       <button
         onClick={() => toggle(sku)}
         aria-label={wishlisted ? `Remove ${title} from wishlist` : `Add ${title} to wishlist`}
-        className="absolute top-3 right-3 text-[#8C7B6B] hover:text-[#B8975A] transition-colors duration-200"
+        className="absolute top-3 right-3 p-2.5 -m-2.5 text-[#8C7B6B] hover:text-[#B8975A] transition-colors duration-200"
       >
         <Heart
           className={cn("w-4 h-4", wishlisted && "fill-[#B8975A] text-[#B8975A]")}

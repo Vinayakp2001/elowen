@@ -14,7 +14,27 @@ export const HomepageSettings: GlobalConfig = {
         { name: "subline", type: "text" },
         { name: "ctaLabel", type: "text" },
         { name: "ctaHref", type: "text" },
-        { name: "image", type: "upload", relationTo: "media" },
+        {
+          name: "image",
+          type: "upload",
+          relationTo: "media",
+          admin: {
+            description:
+              "Recommended: at least 2400×1600px, landscape ~3:2 aspect ratio. " +
+              "Keep the main subject in the center — mobile crops to center, so " +
+              "edge subjects get cut off. Keep the file size small, as the hero " +
+              "image is served unoptimized and large files slow the homepage.",
+          },
+        },
+        {
+          name: "heroPreview",
+          type: "ui",
+          admin: {
+            components: {
+              Field: "/components/admin/HeroImagePreview#HeroImagePreview",
+            },
+          },
+        },
       ],
     },
     {
