@@ -46,6 +46,46 @@ body {
   }
 }
 
+/* ─── Buttons ───────────────────────────────────────────────────────────────── */
+/* Primary: solid charcoal fill, used for the main call-to-action (e.g. Proceed
+   to Checkout). Ghost: borderless text action (e.g. Continue Shopping). */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.5rem;
+  background-color: var(--color-charcoal);
+  color: var(--color-ivory);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-charcoal);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-color: var(--color-black);
+  border-color: var(--color-black);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  background-color: transparent;
+  color: var(--color-taupe);
+  font-family: var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  color: var(--color-charcoal);
+}
+
 /* ─── Skeleton Shimmer ──────────────────────────────────────────────────────── */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
