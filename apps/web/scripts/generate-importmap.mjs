@@ -50,6 +50,23 @@ const config = await buildConfig({
       baseDir: rootDir,
       importMapFile,
     },
+    components: {
+      afterNavLinks: ["/components/admin/AdminNavLinks#default"],
+      views: {
+        ordersView: {
+          Component: "/components/admin/OrdersView#default",
+          path: "/orders-view",
+        },
+        orderDetailView: {
+          Component: "/components/admin/OrderDetailView#default",
+          path: "/orders-view/:id",
+        },
+        newsletterView: {
+          Component: "/components/admin/NewsletterView#default",
+          path: "/newsletter-view",
+        },
+      },
+    },
   },
 })
 

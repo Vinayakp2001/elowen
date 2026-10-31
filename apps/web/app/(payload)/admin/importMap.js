@@ -23,6 +23,10 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { AssignNavItemAction as AssignNavItemAction_2aa99bee01e8e35e0fbdba609aff04c6 } from '@/components/admin/AssignNavItemAction'
 import { HeroImagePreview as HeroImagePreview_85d3efdb9b61c0f6362a26ef7c031f9e } from '../../../components/admin/HeroImagePreview'
+import { default as default_6e8db327abb4c1711d058b611f9e01a3 } from '../../../components/admin/AdminNavLinks'
+import { default as default_c6c1bdf1e1aa8ddfbe534583a9336266 } from '../../../components/admin/OrdersView'
+import { default as default_eef983dcdbd2b604a326b01d778ee1d9 } from '../../../components/admin/OrderDetailView'
+import { default as default_21c6d7860dc22013de80920d9acf59a4 } from '../../../components/admin/NewsletterView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -52,5 +56,9 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/admin/AssignNavItemAction#AssignNavItemAction": AssignNavItemAction_2aa99bee01e8e35e0fbdba609aff04c6,
   "/components/admin/HeroImagePreview#HeroImagePreview": HeroImagePreview_85d3efdb9b61c0f6362a26ef7c031f9e,
+  "/components/admin/AdminNavLinks#default": default_6e8db327abb4c1711d058b611f9e01a3,
+  "/components/admin/OrdersView#default": default_c6c1bdf1e1aa8ddfbe534583a9336266,
+  "/components/admin/OrderDetailView#default": default_eef983dcdbd2b604a326b01d778ee1d9,
+  "/components/admin/NewsletterView#default": default_21c6d7860dc22013de80920d9acf59a4,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

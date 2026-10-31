@@ -32,6 +32,27 @@ export default buildConfig({
       baseDir: dirname,
       importMapFile: path.resolve(dirname, "app/(payload)/admin/importMap.js"),
     },
+    components: {
+      // Extra nav links for the read-only custom views (grouped Shop/Marketing).
+      afterNavLinks: ["/components/admin/AdminNavLinks#default"],
+      // Read-only custom admin views backed by FastAPI endpoints. These declare
+      // NO Payload collection, so Payload never owns/migrates the underlying
+      // FastAPI tables (orders / order_items / payments / newsletter_signups).
+      views: {
+        ordersView: {
+          Component: "/components/admin/OrdersView#default",
+          path: "/orders-view",
+        },
+        orderDetailView: {
+          Component: "/components/admin/OrderDetailView#default",
+          path: "/orders-view/:id",
+        },
+        newsletterView: {
+          Component: "/components/admin/NewsletterView#default",
+          path: "/newsletter-view",
+        },
+      },
+    },
   },
   typescript: {
     outputFile: "./payload-types.ts",
