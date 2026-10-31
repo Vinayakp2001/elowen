@@ -23,6 +23,10 @@ ARG NEXT_PUBLIC_SERVER_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
 ENV NEXT_TELEMETRY_DISABLED=1
+# Raise Node heap ceiling so `next build` isn't OOM-killed on leaner CI runners
+# (local builds pass with the default; CI has less RAM and the process gets
+# killed with a bare "exit code: 1" and no type error above it).
+ENV NODE_OPTIONS=--max-old-space-size=4096
 
 RUN npm run build
 
